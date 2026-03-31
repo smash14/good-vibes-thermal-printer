@@ -15,7 +15,7 @@ def setup_gpio(pin: int):
 
 def wait_for_button(pin: int) -> float:
     input("Press Enter to print a quote... ")
-    return 0.0
+    return 0.2  # 200ms exceeds SHORT_PRESS_MIN_DURATION threshold
 
 
 def cleanup_printer_queue():

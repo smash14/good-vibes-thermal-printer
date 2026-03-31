@@ -45,7 +45,8 @@ def wait_for_button(pin: int) -> float:
 
     def stdin_listener():
         sys.stdin.readline()
-        triggered.set()  # press_duration stays 0.0 → always a short press
+        press_duration[0] = 0.2  # 200ms exceeds SHORT_PRESS_MIN_DURATION threshold
+        triggered.set()
 
     threading.Thread(target=gpio_listener, daemon=True).start()
     threading.Thread(target=stdin_listener, daemon=True).start()
