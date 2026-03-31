@@ -2,6 +2,7 @@
 VERSION = "V2.0.0"
 BUTTON_PIN = 15  # GPIO15 (physical pin 10)
 LONG_PRESS_THRESHOLD = 5.0  # seconds
+SHORT_PRESS_MIN_DURATION = 0.05  # 50ms minimum to filter false detections
 CSV_FILE = "goodVibes.csv"
 IMAGE_FOLDER = "header_images"
 
@@ -57,7 +58,7 @@ def main():
                 buffer.set_text("Shutting down all the good vibes...")
                 buffer.print()
                 platform.shutdown()
-            else:
+            elif press_duration >= SHORT_PRESS_MIN_DURATION:
                 logging.info("Short press detected: printing coffee quote.")
                 buffer.print_welcome_lines()
                 
