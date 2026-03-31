@@ -2,7 +2,7 @@
 
 Print Good Vibe Quotes using a Raspberry Pi and a Thermal Printer. Each time a physical button is pressed, another random Good Vibe Quote gets printed.
 
-## prerequisites
+## Prerequisites
 
 - A Raspberry Pi 
 - A connected printer
@@ -37,7 +37,14 @@ The code uses Physical Pin 10 (GPIO15) with an internal pull-up resistor, so the
 
 Fur debug purposes, you could also press the `ENTER` key on your keyboard to trigger a printout.
 
-## Execute the code
+## Execute the Code
 Simply run `main.py` to run the code.
 
+## Autostart Python File
+open bashrc using `nano ~/.bashrc` and put your python code at the end of file.
+
+```
+# autostart kaffee quote
+python /home/PATH_TO_PYTHON_FILE/main.py
+```
 

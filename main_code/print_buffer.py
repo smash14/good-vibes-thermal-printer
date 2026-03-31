@@ -25,6 +25,7 @@ class PrintBuffer:
 
     def select_random_line(self):
         self.text = random.choice(self.lines) if self.lines else "<No data available>"
+        logging.info(f"Selected random line: {self.text}")
 
     def set_text(self, new_text):
         self.text = new_text
