@@ -3,14 +3,16 @@ import json
 import random
 import logging
 import os
+import glob
 
 
 class PrintBuffer:
-    def __init__(self, filename, print_raw, print_image_file, strings_file="strings.json"):
+    def __init__(self, filename, print_raw, print_image_file, strings_file="strings.json", image_folder="header_images"):
         self.lines = self._load_csv(filename)
         self._print_raw = print_raw
         self._print_image_file = print_image_file
         self.strings_file = strings_file
+        self.image_folder = image_folder
         self.strings = self._load_strings()
         self._reset_font_styles()
 
@@ -118,6 +120,17 @@ class PrintBuffer:
             self.print()
             self.set_text_stars()
             self.print()
+
+    def print_all_images(self):
+        """Print all .bin image files from the image folder."""
+        image_files = sorted(glob.glob(os.path.join(self.image_folder, "*.bin")))
+        if not image_files:
+            logging.warning(f"No .bin files found in {self.image_folder} folder.")
+            return
+        for image_file in image_files:
+            self._reset_font_styles()
+            self.print_image(image_file)
+            logging.info(f"Printed image: {image_file}")
 
     def print_bootup_lines(self, version):
         bootup_msg = self.strings.get("bootup_message", {}).get("text", "All good vibes loaded\n{version}")

@@ -6,6 +6,7 @@ SHORT_PRESS_MIN_DURATION = 0.05  # 50ms minimum to filter false detections
 CSV_FILE = "goodVibes.csv"
 IMAGE_FOLDER = "header_images"
 STRINGS_FILE = "strings.json"
+LOGFILE = "logfile.log"
 
 import sys
 import time
@@ -25,7 +26,7 @@ from print_buffer import PrintBuffer
 # === Helper Functions ===
 def resolve_file_paths():
     """Resolve file paths. On Linux, prefer /var/www/html if files exist there. On Windows, prefer C:\\xampp\\htdocs."""
-    global CSV_FILE, IMAGE_FOLDER, STRINGS_FILE
+    global CSV_FILE, IMAGE_FOLDER, STRINGS_FILE, LOGFILE
     
     if sys.platform == "linux":
         www_path = "/var/www/html"
@@ -35,6 +36,7 @@ def resolve_file_paths():
     csv_candidate = os.path.join(www_path, CSV_FILE)
     image_candidate = os.path.join(www_path, IMAGE_FOLDER)
     strings_candidate = os.path.join(www_path, STRINGS_FILE)
+    logfile_candidate = os.path.join(www_path, LOGFILE)
     
     # Check each file/folder independently in www_path
     if os.path.exists(csv_candidate):
@@ -46,6 +48,9 @@ def resolve_file_paths():
     if os.path.exists(strings_candidate):
         STRINGS_FILE = strings_candidate
         logging.info(f"Using strings file from {www_path}: {STRINGS_FILE}")
+    if os.path.exists(www_path):
+        LOGFILE = logfile_candidate
+        logging.info(f"Using logfile from {www_path}: {LOGFILE}")
 
 
 def get_random_image():
@@ -60,7 +65,7 @@ def get_random_image():
 # === Main Logic ===
 def main():
     logging.basicConfig(
-        filename='logfile.log', filemode='a', level=logging.INFO,
+        filename=LOGFILE, filemode='a', level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S'
     )
     logging.getLogger().addHandler(logging.StreamHandler())
@@ -72,19 +77,28 @@ def main():
     logging.info("Good Vibes Printer ready.")
     platform.setup_gpio(BUTTON_PIN)
 
-    buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image, STRINGS_FILE)
+    buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image, STRINGS_FILE, IMAGE_FOLDER)
     buffer.print_bootup_lines(VERSION)
-    # buffer.print_all_quotes()
+
+    startup_time = time.time()
+    bootup_window = 30  # 30 seconds window
 
     try:
         while True:
             press_duration = platform.wait_for_button(BUTTON_PIN)
+            time_since_startup = time.time() - startup_time
 
             if press_duration >= LONG_PRESS_THRESHOLD:
-                logging.info("Long press detected: shutting down.")
-                buffer.set_text("Shutting down all the good vibes...")
-                buffer.print()
-                platform.shutdown()
+                if time_since_startup < bootup_window:
+                    logging.info("Long press detected during bootup window: printing all quotes and images")
+                    buffer.print_all_quotes()
+                    buffer.print_all_images()
+                    platform.cleanup_printer_queue()
+                else:
+                    logging.info("Long press detected: shutting down.")
+                    buffer.set_text("Shutting down all the good vibes...")
+                    buffer.print()
+                    platform.shutdown()
             elif press_duration >= SHORT_PRESS_MIN_DURATION:
                 logging.info("Short press detected: printing coffee quote.")
                 buffer.print_welcome_lines()

@@ -1,4 +1,9 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', sys_get_temp_dir() . '/php_error.log');
+
 $csvFile = "goodVibes.csv";
 $imgDir = "header_images/";
 $stringsFile = "strings.json";
@@ -79,29 +84,95 @@ if (isset($_POST['delete_all'])) {
     echo "All files deleted.<br>";
 }
 
+// Delete logfile
+if (isset($_POST['delete_logfile'])) {
+    if (file_exists('logfile.log')) {
+        unlink('logfile.log');
+        echo "Logfile deleted.<br>";
+    } else {
+        echo "Logfile does not exist.<br>";
+    }
+}
+
 // Download all files as ZIP
 if (isset($_GET['download_all'])) {
-    $zip = new ZipArchive();
-    $zipName = "header_images.zip";
+    try {
+        // Check if ZipArchive is available
+        if (!extension_loaded('zip')) {
+            throw new Exception("ZIP extension is not installed on this server.");
+        }
 
-    if ($zip->open($zipName, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+        if (!is_dir($imgDir)) {
+            throw new Exception("Image directory does not exist: " . realpath($imgDir));
+        }
+
         $files = glob($imgDir . '*');
+        error_log("DEBUG: glob returned: " . var_export($files, true));
+        
+        if ($files === false) {
+            throw new Exception("Could not read directory.");
+        }
+
+        if (empty($files)) {
+            throw new Exception("No files found in header_images directory.");
+        }
+
+        $zip = new ZipArchive();
+        $tempDir = sys_get_temp_dir();
+        $zipName = $tempDir . '/header_images_' . time() . '.zip';
+        error_log("DEBUG: Creating ZIP at: " . $zipName);
+
+        if (!$zip->open($zipName, ZipArchive::CREATE | ZipArchive::OVERWRITE)) {
+            throw new Exception("Could not create ZIP archive at " . $zipName);
+        }
 
         foreach ($files as $file) {
             if (is_file($file)) {
-                $zip->addFile($file, basename($file));
+                $localName = basename($file);
+                error_log("DEBUG: Adding file: " . $file . " as " . $localName);
+                if (!$zip->addFile($file, $localName)) {
+                    throw new Exception("Could not add file to ZIP: " . $localName);
+                }
             }
         }
 
-        $zip->close();
+        if (!$zip->close()) {
+            throw new Exception("Could not close ZIP archive.");
+        }
+
+        if (!file_exists($zipName)) {
+            throw new Exception("ZIP file was not created properly at: " . $zipName);
+        }
+
+        $fileSize = filesize($zipName);
+        error_log("DEBUG: ZIP file created, size: " . $fileSize);
 
         header('Content-Type: application/zip');
-        header('Content-Disposition: attachment; filename="' . $zipName . '"');
-        readfile($zipName);
-        unlink($zipName);
+        header('Content-Disposition: attachment; filename="header_images.zip"');
+        header('Content-Length: ' . $fileSize);
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        ob_clean();
+        flush();
+        
+        if (!readfile($zipName)) {
+            error_log("Failed to read ZIP file: " . $zipName);
+        }
+
+        @unlink($zipName);
         exit;
-    } else {
-        echo "Could not create ZIP.<br>";
+    } catch (Exception $e) {
+        error_log("ZIP Download Error: " . $e->getMessage());
+        http_response_code(400);
+        header('Content-Type: text/plain');
+        echo "Download error: " . htmlspecialchars($e->getMessage()) . "\n\n";
+        echo "Debug info:\n";
+        echo "- Image directory: " . $imgDir . "\n";
+        echo "- Directory exists: " . (is_dir($imgDir) ? "yes" : "no") . "\n";
+        echo "- ZIP extension loaded: " . (extension_loaded('zip') ? "yes" : "no") . "\n";
+        exit;
     }
 }
 ?>
@@ -215,6 +286,26 @@ if (file_exists($stringsFile)) {
     echo "<pre>" . htmlspecialchars($jsonPretty) . "</pre>";
 } else {
     echo "No strings.json file found.";
+}
+?>
+
+<hr>
+
+<h2>Delete Logfile</h2>
+<form method="post">
+    <button type="submit" name="delete_logfile" onclick="return confirm('Are you sure you want to delete logfile.log?')">Delete Logfile</button>
+</form>
+
+<hr>
+
+<h2>Logfile Content (logfile.log)</h2>
+
+<?php
+if (file_exists('logfile.log')) {
+    $logContent = file_get_contents('logfile.log');
+    echo "<pre>" . htmlspecialchars($logContent) . "</pre>";
+} else {
+    echo "No logfile.log found.";
 }
 ?>
 
