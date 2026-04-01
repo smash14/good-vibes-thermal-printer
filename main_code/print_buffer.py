@@ -6,10 +6,11 @@ import os
 
 
 class PrintBuffer:
-    def __init__(self, filename, print_raw, print_image_file):
+    def __init__(self, filename, print_raw, print_image_file, strings_file="strings.json"):
         self.lines = self._load_csv(filename)
         self._print_raw = print_raw
         self._print_image_file = print_image_file
+        self.strings_file = strings_file
         self.strings = self._load_strings()
         self._reset_font_styles()
 
@@ -28,7 +29,7 @@ class PrintBuffer:
 
     def _load_strings(self):
         try:
-            strings_path = os.path.join(os.path.dirname(__file__), "strings.json")
+            strings_path = os.path.join(os.path.dirname(__file__), self.strings_file)
             with open(strings_path, "r", encoding="utf-8") as file:
                 strings = json.load(file)
             logging.info("Loaded strings from JSON.")
@@ -139,7 +140,7 @@ class PrintBuffer:
         self.print()
         self.set_feed_lines(0)
 
-    def print_random_general_kaffee_quote(self):
+    def print_random_quote(self):
         self._reset_font_styles()
         self.set_text_align("center")
         self.set_text_stars()

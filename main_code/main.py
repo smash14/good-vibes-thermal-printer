@@ -5,6 +5,7 @@ LONG_PRESS_THRESHOLD = 5.0  # seconds
 SHORT_PRESS_MIN_DURATION = 0.05  # 50ms minimum to filter false detections
 CSV_FILE = "goodVibes.csv"
 IMAGE_FOLDER = "header_images"
+STRINGS_FILE = "strings.json"
 
 import sys
 import time
@@ -22,6 +23,31 @@ from print_buffer import PrintBuffer
 
 
 # === Helper Functions ===
+def resolve_file_paths():
+    """Resolve file paths. On Linux, prefer /var/www/html if files exist there. On Windows, prefer C:\\xampp\\htdocs."""
+    global CSV_FILE, IMAGE_FOLDER, STRINGS_FILE
+    
+    if sys.platform == "linux":
+        www_path = "/var/www/html"
+    else:  # Windows
+        www_path = "C:\\xampp\\htdocs"
+    
+    csv_candidate = os.path.join(www_path, CSV_FILE)
+    image_candidate = os.path.join(www_path, IMAGE_FOLDER)
+    strings_candidate = os.path.join(www_path, STRINGS_FILE)
+    
+    # Check each file/folder independently in www_path
+    if os.path.exists(csv_candidate):
+        CSV_FILE = csv_candidate
+        logging.info(f"Using CSV file from {www_path}: {CSV_FILE}")
+    if os.path.exists(image_candidate):
+        IMAGE_FOLDER = image_candidate
+        logging.info(f"Using image folder from {www_path}: {IMAGE_FOLDER}")
+    if os.path.exists(strings_candidate):
+        STRINGS_FILE = strings_candidate
+        logging.info(f"Using strings file from {www_path}: {STRINGS_FILE}")
+
+
 def get_random_image():
     """Get a random .bin image file from the header_images folder."""
     image_files = glob.glob(os.path.join(IMAGE_FOLDER, "*.bin"))
@@ -41,11 +67,12 @@ def main():
     logging.info(f"============================ {VERSION} ============================")
     logging.info("Start Main Application")
 
+    resolve_file_paths()
     platform.cleanup_printer_queue()
     logging.info("Good Vibes Printer ready.")
     platform.setup_gpio(BUTTON_PIN)
 
-    buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image)
+    buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image, STRINGS_FILE)
     buffer.print_bootup_lines(VERSION)
     # buffer.print_all_quotes()
 
@@ -67,7 +94,7 @@ def main():
                     buffer.print_image(random_image)
                     logging.info(f"Selected image: {random_image}")
                 
-                buffer.print_random_general_kaffee_quote()
+                buffer.print_random_quote()
                 buffer.print_finish_line()
                 logging.info(f"Selected line: {buffer.text}")
                 time.sleep(3)
