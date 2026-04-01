@@ -1,0 +1,38 @@
+{
+  "bootup_message": {
+    "description": "Message shown when system boots up, {version} will be replaced with actual version",
+    "text": "All good vibes loaded\n{version}"
+  },
+  "welcome_title": {
+    "description": "Main welcome message displayed at startup",
+    "text": "Good Vibes Only\n"
+  },
+  "welcome_decoration": {
+    "description": "Decorative text shown after welcome title",
+    "text": "~~~ <3 ~~~"
+  },
+  "separator": {
+    "description": "Separator line used between quote sections",
+    "text": "*****************************"
+  },
+  "finish_prefix": {
+    "description": "Prefix before the random adjective. {word} will be replaced with a random adjective",
+    "text": "Have a\n{word} day! <3"
+  },
+  "adjectives": {
+    "description": "List of random adjectives used in the finish message",
+    "text": ["wonderful", "fantastic", "beautiful", "really good", "outstanding", "friendly", "sunny", "successful"]
+  },
+  "error_csv_load": {
+    "description": "Error message when CSV file fails to load",
+    "text": "<CSV load error>"
+  },
+  "error_no_data": {
+    "description": "Error message when no data is available to select",
+    "text": "<No data available>"
+  },
+  "error_encoding": {
+    "description": "Error message when text encoding fails",
+    "text": "error transcoding text"
+  }
+}

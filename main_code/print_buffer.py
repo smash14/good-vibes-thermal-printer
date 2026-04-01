@@ -1,6 +1,8 @@
 import csv
+import json
 import random
 import logging
+import os
 
 
 class PrintBuffer:
@@ -8,6 +10,7 @@ class PrintBuffer:
         self.lines = self._load_csv(filename)
         self._print_raw = print_raw
         self._print_image_file = print_image_file
+        self.strings = self._load_strings()
         self._reset_font_styles()
 
     @staticmethod
@@ -23,8 +26,20 @@ class PrintBuffer:
             logging.error(f"Failed to load CSV: {e}")
             return ["<CSV load error>"]
 
+    def _load_strings(self):
+        try:
+            strings_path = os.path.join(os.path.dirname(__file__), "strings.json")
+            with open(strings_path, "r", encoding="utf-8") as file:
+                strings = json.load(file)
+            logging.info("Loaded strings from JSON.")
+            return strings
+        except Exception as e:
+            logging.error(f"Failed to load strings.json: {e}")
+            return {}
+
     def select_random_line(self):
-        self.text = random.choice(self.lines) if self.lines else "<No data available>"
+        no_data_msg = self.strings.get("error_no_data", {}).get("text", "<No data available>")
+        self.text = random.choice(self.lines) if self.lines else no_data_msg
         logging.info(f"Selected random line: {self.text}")
 
     def set_text(self, new_text):
@@ -58,7 +73,8 @@ class PrintBuffer:
         self.feed_lines = b'\x1B\x64' + bytes([n])
 
     def set_text_stars(self):
-        self.text = "*****************************"
+        separator = self.strings.get("separator", {}).get("text", "*****************************")
+        self.text = separator
 
     def _reset_font_styles(self):
         self.text = ""
@@ -72,7 +88,8 @@ class PrintBuffer:
         try:
             encoded = self.text.encode("cp850")
         except Exception as e:
-            encoded = b"error transcoding text"
+            error_msg = self.strings.get("error_encoding", {}).get("text", "error transcoding text")
+            encoded = error_msg.encode("cp850", errors="replace")
             logging.error(f"Text encoding failed: {e}")
         return (
             self.text_align
@@ -102,7 +119,8 @@ class PrintBuffer:
             self.print()
 
     def print_bootup_lines(self, version):
-        self.set_text(f"All good vibes loaded\n{version}")
+        bootup_msg = self.strings.get("bootup_message", {}).get("text", "All good vibes loaded\n{version}")
+        self.set_text(bootup_msg.format(version=version))
         self.set_feed_lines(5)
         self.print()
 
@@ -110,11 +128,13 @@ class PrintBuffer:
         self._reset_font_styles()
         self.set_text_align("center")
         self.set_font_size("big")
-        self.set_text("Good Vibes Only\n")
+        welcome_title = self.strings.get("welcome_title", {}).get("text", "Good Vibes Only\n")
+        self.set_text(welcome_title)
         self.print()
         self.set_font_bold(False)
         self.set_font_size("normal")
-        self.set_text("~~~ <3 ~~~")
+        welcome_decoration = self.strings.get("welcome_decoration", {}).get("text", "~~~ <3 ~~~")
+        self.set_text(welcome_decoration)
         self.set_feed_lines(2)
         self.print()
         self.set_feed_lines(0)
@@ -132,11 +152,9 @@ class PrintBuffer:
 
     def print_finish_line(self):
         self._reset_font_styles()
-        words = [
-            "wonderful", "fantastic", "beautiful", "really good",
-            "outstanding", "friendly", "sunny", "successful",
-        ]
+        adjectives = self.strings.get("adjectives", {}).get("text", ["wonderful", "fantastic", "beautiful"])
+        finish_template = self.strings.get("finish_prefix", {}).get("text", "Have a\n{word} day! <3")
         self.set_text_align("center")
-        self.set_text(f"Have a\n{random.choice(words)} day! <3")
+        self.set_text(finish_template.format(word=random.choice(adjectives)))
         self.set_feed_lines(5)
         self.print()
