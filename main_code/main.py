@@ -1,5 +1,5 @@
 # === Configuration ===
-VERSION = "V2.0.0"
+VERSION = "V3.0.0"
 BUTTON_PIN = 15  # GPIO15 (physical pin 10)
 LONG_PRESS_THRESHOLD = 5.0  # seconds
 SHORT_PRESS_MIN_DURATION = 0.05  # 50ms minimum to filter false detections
