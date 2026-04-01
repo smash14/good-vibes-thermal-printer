@@ -1,6 +1,8 @@
 <?php
 $csvFile = "goodVibes.csv";
 $imgDir = "header_images/";
+$stringsFile = "strings.json";
+$stringsDefaultFile = "strings_default.json";
 
 // Ensure directory exists
 if (!file_exists($imgDir)) {
@@ -24,6 +26,36 @@ if (isset($_GET['download_csv'])) {
         exit;
     } else {
         echo "CSV file not found.<br>";
+    }
+}
+
+// Handle strings.json upload
+if (isset($_POST['upload_strings']) && isset($_FILES['strings_file'])) {
+    if ($_FILES['strings_file']['error'] === 0) {
+        move_uploaded_file($_FILES['strings_file']['tmp_name'], $stringsFile);
+        echo "strings.json uploaded successfully.<br>";
+    }
+}
+
+// Handle strings.json download
+if (isset($_GET['download_strings'])) {
+    if (file_exists($stringsFile)) {
+        header('Content-Type: application/json');
+        header('Content-Disposition: attachment; filename="strings.json"');
+        readfile($stringsFile);
+        exit;
+    } else {
+        echo "strings.json file not found.<br>";
+    }
+}
+
+// Handle restore to default
+if (isset($_POST['restore_strings'])) {
+    if (file_exists($stringsDefaultFile)) {
+        copy($stringsDefaultFile, $stringsFile);
+        echo "strings.json restored to default.<br>";
+    } else {
+        echo "Default strings.json file not found.<br>";
     }
 }
 
@@ -92,6 +124,22 @@ if (isset($_GET['download_all'])) {
 
 <hr>
 
+<h2>Upload strings.json (will replace strings.json)</h2>
+<form method="post" enctype="multipart/form-data">
+    <input type="file" name="strings_file" accept=".json" required>
+    <button type="submit" name="upload_strings">Upload strings.json</button>
+</form>
+
+<h2>Download strings.json</h2>
+<a href="?download_strings=1">Download strings.json</a>
+
+<h2>Restore strings.json to Default</h2>
+<form method="post">
+    <button type="submit" name="restore_strings" onclick="return confirm('Are you sure you want to restore to default?')">Restore to Default</button>
+</form>
+
+<hr>
+
 <h2>Upload BIN file (to header_images/)</h2>
 <form method="post" enctype="multipart/form-data">
     <input type="file" name="bin_file" required>
@@ -153,6 +201,20 @@ if ($files !== false) {
     echo "</ul>";
 } else {
     echo "Could not read directory.";
+}
+?>
+
+<hr>
+
+<h2>strings.json Preview</h2>
+
+<?php
+if (file_exists($stringsFile)) {
+    $jsonContent = file_get_contents($stringsFile);
+    $jsonPretty = json_encode(json_decode($jsonContent, true), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    echo "<pre>" . htmlspecialchars($jsonPretty) . "</pre>";
+} else {
+    echo "No strings.json file found.";
 }
 ?>
 
