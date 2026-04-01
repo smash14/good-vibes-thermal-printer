@@ -39,18 +39,19 @@ def resolve_file_paths():
     logfile_candidate = os.path.join(www_path, LOGFILE)
     
     # Check each file/folder independently in www_path
+    # Can not use logger here, as it is not set up yet
     if os.path.exists(csv_candidate):
         CSV_FILE = csv_candidate
-        logging.info(f"Using CSV file from {www_path}: {CSV_FILE}")
+        print(f"Using CSV file from {www_path}: {CSV_FILE}")
     if os.path.exists(image_candidate):
         IMAGE_FOLDER = image_candidate
-        logging.info(f"Using image folder from {www_path}: {IMAGE_FOLDER}")
+        print(f"Using image folder from {www_path}: {IMAGE_FOLDER}")
     if os.path.exists(strings_candidate):
         STRINGS_FILE = strings_candidate
-        logging.info(f"Using strings file from {www_path}: {STRINGS_FILE}")
+        print(f"Using strings file from {www_path}: {STRINGS_FILE}")
     if os.path.exists(www_path):
         LOGFILE = logfile_candidate
-        logging.info(f"Using logfile from {www_path}: {LOGFILE}")
+        print(f"Using logfile from {www_path}: {LOGFILE}")
 
 
 def get_random_image():
@@ -64,6 +65,7 @@ def get_random_image():
 
 # === Main Logic ===
 def main():
+    resolve_file_paths()
     logging.basicConfig(
         filename=LOGFILE, filemode='a', level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S'
@@ -72,7 +74,6 @@ def main():
     logging.info(f"============================ {VERSION} ============================")
     logging.info("Start Main Application")
 
-    resolve_file_paths()
     platform.cleanup_printer_queue()
     logging.info("Good Vibes Printer ready.")
     platform.setup_gpio(BUTTON_PIN)
