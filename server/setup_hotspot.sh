@@ -1,40 +1,38 @@
 #!/bin/bash
-# Raspberry Pi Wireless Hotspot Setup Script
-# This script sets up a wireless hotspot with SSID "goodvibes" and passphrase "728349028394"
-# Run this once with: sudo bash setup_hotspot.sh
+# Raspberry Pi Hotspot Setup Script - Run once to configure
+# This script installs and configures everything needed for a WiFi hotspot
 
-set -e
+set -e  # Exit on error
 
-SSID="goodvibes"
-PASSPHRASE="728349028394"
-INTERFACE="wlan0"
+echo "=== Raspberry Pi Hotspot Setup ==="
 
-echo "========================================="
-echo "Raspberry Pi Hotspot Setup"
-echo "SSID: $SSID"
-echo "========================================="
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then
+    echo "This script must be run as root. Use: sudo bash setup_hotspot.sh"
+    exit 1
+fi
 
-# Update system
+# Update system packages
 echo "Updating system packages..."
-sudo apt-get update
-sudo apt-get install -y hostapd dnsmasq iptables-persistent
+apt-get update
+apt-get upgrade -y
 
-# Stop services before configuration
-echo "Stopping services..."
-sudo systemctl stop hostapd || true
-sudo systemctl stop dnsmasq || true
-sudo systemctl stop wpa_supplicant || true
+# Install required packages
+echo "Installing required packages..."
+apt-get install -y hostapd dnsmasq
 
-# Bring down wlan0 if it's up
-echo "Bringing down $INTERFACE..."
-sudo ip link set $INTERFACE down || true
-sudo ip addr flush dev $INTERFACE || true
+# Backup original configurations
+echo "Backing up original configurations..."
+[ ! -f /etc/hostapd/hostapd.conf.bak ] && cp /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.bak || true
+[ ! -f /etc/dnsmasq.conf.bak ] && cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak || true
+[ -f /etc/dhcpcd.conf ] && [ ! -f /etc/dhcpcd.conf.bak ] && cp /etc/dhcpcd.conf /etc/dhcpcd.conf.bak || true
 
 # Configure hostapd
 echo "Configuring hostapd..."
-sudo tee /etc/hostapd/hostapd.conf > /dev/null <<EOF
-interface=$INTERFACE
-ssid=$SSID
+cat > /etc/hostapd/hostapd.conf << 'EOF'
+interface=wlan0
+driver=nl80211
+ssid=goodvibes
 hw_mode=g
 channel=7
 wmm_enabled=0
@@ -42,87 +40,103 @@ macaddr_acl=0
 auth_algs=1
 ignore_broadcast_ssid=0
 wpa=2
-wpa_passphrase=$PASSPHRASE
+wpa_passphrase=goodvibes123
 wpa_key_mgmt=WPA-PSK
 wpa_pairwise=CCMP
-wpa_ptk_rekey=600
+wpa_group_rekey=86400
 EOF
 
-# Set hostapd config file path
-echo "Setting hostapd configuration path..."
-sudo sed -i 's|^#DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
+echo "✓ hostapd configured (SSID: goodvibes, Password: goodvibes123)"
 
-# Configure dnsmasq
-echo "Configuring dnsmasq..."
-sudo cp /etc/dnsmasq.conf /etc/dnsmasq.conf.bak
-sudo tee /etc/dnsmasq.conf > /dev/null <<EOF
-interface=$INTERFACE
+# Stop dnsmasq if it's running
+systemctl stop dnsmasq 2>/dev/null || true
+
+# Configure dnsmasq - create new minimal config
+cat > /etc/dnsmasq.conf << 'EOF'
+port=53
+interface=wlan0
+bind-interfaces
 dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
-dhcp-option=option:router,192.168.4.1
+dhcp-option=3,192.168.4.1
+dhcp-option=6,192.168.4.1
+log-dhcp
 EOF
 
-# Configure static IP for wlan0
-echo "Configuring static IP for $INTERFACE..."
-sudo tee -a /etc/dhcpcd.conf > /dev/null <<EOF
+echo "✓ dnsmasq configured"
 
-# Static IP for wireless hotspot
-interface $INTERFACE
-static ip_address=192.168.4.1/24
-nohook wpa_supplicant
+# Configure dhcpcd to exclude wlan0 (we manage it manually)
+if [ -f /etc/dhcpcd.conf ]; then
+    echo "Configuring dhcpcd to exclude wlan0..."
+
+    # Remove any existing wlan0 config from dhcpcd.conf
+    sed -i '/^interface wlan0/,/^$/d' /etc/dhcpcd.conf
+
+    # Add config to exclude wlan0 entirely
+    cat >> /etc/dhcpcd.conf << 'EOF'
+
+# Hotspot configuration - managed by start_hotspot.sh
+denyinterfaces wlan0
 EOF
-
-# Bring up interface with static IP
-echo "Bringing up $INTERFACE with static IP..."
-sudo ip link set $INTERFACE up
-sudo ip addr add 192.168.4.1/24 dev $INTERFACE || true
+    echo "✓ dhcpcd configured to exclude wlan0"
+fi
 
 # Enable IP forwarding
 echo "Enabling IP forwarding..."
-sudo sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
-sudo sysctl -p
+grep -q "net.ipv4.ip_forward=1" /etc/sysctl.conf || echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+sysctl -p > /dev/null
 
-# Configure iptables for NAT
-echo "Configuring iptables..."
-sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo iptables -A FORWARD -i eth0 -o $INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i $INTERFACE -o eth0 -j ACCEPT
+# Configure iptables NAT
+echo "Configuring iptables for NAT..."
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE 2>/dev/null || true
+iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT 2>/dev/null || true
 
-# Save iptables rules
-sudo iptables-save | sudo tee /etc/iptables/rules.v4 > /dev/null
-
-# Unmask services (in case they are masked)
-echo "Unmasking services..."
-sudo systemctl unmask hostapd || true
-sudo systemctl unmask dnsmasq || true
-
-# Enable services at boot
-echo "Enabling services at boot..."
-sudo systemctl enable hostapd
-sudo systemctl enable dnsmasq
-
-# Start services
-echo "Starting services..."
-sudo systemctl restart dhcpcd || echo "Warning: dhcpcd not found, skipping..."
-
-# Give the interface a moment to be ready
-sleep 2
-
-sudo systemctl start dnsmasq || echo "Warning: dnsmasq failed to start"
-if ! sudo systemctl start hostapd; then
-    echo "ERROR: hostapd failed to start!"
-    echo "Troubleshooting: Check 'sudo systemctl status hostapd' or 'sudo journalctl -xeu hostapd.service'"
-    echo "Common issues:"
-    echo "  - wpa_supplicant is still running on wlan0"
-    echo "  - Another wireless manager is controlling wlan0"
-    echo "  - wlan0 is not available on this device"
-    exit 1
+# Save iptables rules if iptables-persistent is installed
+if command -v iptables-save >/dev/null; then
+    mkdir -p /etc/iptables
+    iptables-save > /etc/iptables/rules.v4 2>/dev/null || true
+    echo "✓ iptables NAT configured and saved"
+else
+    echo "✓ iptables NAT configured"
 fi
 
-echo "========================================="
-echo "Hotspot setup complete!"
-echo "SSID: $SSID"
-echo "Passphrase: $PASSPHRASE"
-echo "IP Address: 192.168.4.1"
-echo "========================================="
-echo "Optional: Add this to ~/.bashrc to autostart:"
-echo "  bash ~/start_hotspot.sh"
+# Disable services from auto-start (will be started by start_hotspot.sh)
+echo "Disabling hotspot services from auto-start..."
+systemctl disable hostapd 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
+
+# Configure passwordless sudo for hotspot commands
+echo "Configuring passwordless sudo access..."
+cat > /etc/sudoers.d/hotspot << 'EOF'
+# Allow hotspot commands without password
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl start hostapd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl stop hostapd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl restart hostapd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl start dnsmasq
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl stop dnsmasq
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl restart dnsmasq
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl start dhcpcd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl stop dhcpcd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl restart dhcpcd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl is-active hostapd
+%sudo ALL=(ALL) NOPASSWD: /bin/systemctl is-active dnsmasq
+%sudo ALL=(ALL) NOPASSWD: /sbin/ip addr add 192.168.4.1/24 dev wlan0
+%sudo ALL=(ALL) NOPASSWD: /sbin/ip link set wlan0 up
+EOF
+chmod 440 /etc/sudoers.d/hotspot
+
+echo "✓ Passwordless sudo configured"
+
+echo ""
+echo "=== Setup Complete ==="
+echo "The hotspot is now configured. To start it, run: ./start_hotspot.sh"
+echo "To make it start automatically after boot, add to ~/.bashrc:"
+echo "  source ~/goodvibes/start_hotspot.sh"
+echo ""
+echo "Configuration Details:"
+echo "  WiFi SSID: goodvibes"
+echo "  WiFi Password: goodvibes123"
+echo "  Hotspot IP: 192.168.4.1"
+echo "  DHCP Range: 192.168.4.2 - 192.168.4.20"
+echo ""
+echo "Note: Your user must be in the 'sudo' group for passwordless commands to work."

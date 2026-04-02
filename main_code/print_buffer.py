@@ -4,6 +4,7 @@ import random
 import logging
 import os
 import glob
+import time
 
 
 class PrintBuffer:
@@ -120,6 +121,8 @@ class PrintBuffer:
             self.print()
             self.set_text_stars()
             self.print()
+            logging.info(f"Printed line: {line}")
+            time.sleep(1)  # Small delay between prints
 
     def print_all_images(self):
         """Print all .bin image files from the image folder."""
@@ -131,6 +134,7 @@ class PrintBuffer:
             self._reset_font_styles()
             self.print_image(image_file)
             logging.info(f"Printed image: {image_file}")
+            time.sleep(2)  # Small delay between prints
 
     def print_bootup_lines(self, version):
         bootup_msg = self.strings.get("bootup_message", {}).get("text", "All good vibes loaded\n{version}")

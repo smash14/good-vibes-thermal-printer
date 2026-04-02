@@ -82,8 +82,8 @@ def main():
     buffer.print_bootup_lines(VERSION)
 
     startup_time = time.time()
-    bootup_window = 30  # 30 seconds window
-
+    bootup_window = 20  # 20 seconds window
+                    
     try:
         while True:
             press_duration = platform.wait_for_button(BUTTON_PIN)
@@ -94,6 +94,7 @@ def main():
                     logging.info("Long press detected during bootup window: printing all quotes and images")
                     buffer.print_all_quotes()
                     buffer.print_all_images()
+                    time.sleep(3)
                     platform.cleanup_printer_queue()
                 else:
                     logging.info("Long press detected: shutting down.")
