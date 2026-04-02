@@ -20,7 +20,23 @@ In this example, a BIXOLON SPP-R220 Mobile Thermal Printer is used
 4) A single push on the button will print out a random quote and image
 5) To turn off printer, press and hold for at least 5 seconds
 
-### Change Quotes, Welcome Text and Footer Text
+### Print all available quotes and images
+For debug purposes, all available quotes and images can be printed at once. This is useful to check for style errors, e.g. if a quote does not fit in one line.
+
+To do so, press and hold the push button for at least 5 seconds within 20 seconds after the welcome line has been printed.
+
+### Create new Quotes
+Quotes can be created by editing the `goodVibes.csv` file. Please not that there is no automatic new line if a quote is too long. Instead, use `\n` within a quote to mark a new line.
+
+After editing is done, check below on how to update the files on the Pi
+
+### Create new images
+Before each quote, an image can be printed. New images can be generated using the helper file `bmp_converter\main.py` which converts any regular png or jpg file into monocolor binary format
+
+### Change other translations
+Other translations, like the welcome line, can be changed by editing the `strings.json` file.
+
+### Upload changes to Raspberry Pi
 All texts can be changed using a Web Interface. 
 1) Connect to the Wireless Network "goodvibes" with passphrase "goodvibes123"
 2) Open Web Browser and open page "192.168.4.1"
