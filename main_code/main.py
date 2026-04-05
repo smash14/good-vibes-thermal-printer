@@ -83,6 +83,7 @@ def main():
 
     startup_time = time.time()
     bootup_window = 20  # 20 seconds window
+    total_quotes_printed = 0  # Track total quotes printed since bootup
                     
     try:
         while True:
@@ -98,7 +99,8 @@ def main():
                     platform.cleanup_printer_queue()
                 else:
                     logging.info("Long press detected: shutting down.")
-                    buffer.set_text("Shutting down all the good vibes...")
+                    logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
+                    buffer.set_text(f"Shutting down all the good vibes...\n\n{total_quotes_printed} good vibes shared!")
                     buffer.print()
                     platform.shutdown()
             elif press_duration >= SHORT_PRESS_MIN_DURATION:
@@ -113,6 +115,8 @@ def main():
                 buffer.print_random_quote()
                 buffer.print_finish_line()
                 logging.info(f"Selected line: {buffer.text}")
+                total_quotes_printed += 1
+                logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
                 time.sleep(3)
                 platform.cleanup_printer_queue()
 
