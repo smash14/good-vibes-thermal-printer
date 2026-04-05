@@ -1,6 +1,6 @@
 # Good Vibes Printer
 
-Print Good Vibe Quotes using a Raspberry Pi and a Thermal Printer. Each time a physical button is pressed, another random Good Vibe Quote gets printed.
+Print Good Vibes Quotes using a Raspberry Pi and a Thermal Printer. Each time a physical button is pressed, another random Good Vibes Quote gets printed.
 
 ![Good Vibes Printer Setup](img.jpg)
 
@@ -12,7 +12,7 @@ Print Good Vibe Quotes using a Raspberry Pi and a Thermal Printer. Each time a p
 
 In this example, a BIXOLON SPP-R220 Mobile Thermal Printer is used
 
-## Instraction For Use
+## Instruction For Use
 ### Quick Start Guide
 1) Connect Thermal Printer via USB to Raspberry Pi and turn the printer on
 2) Power on Raspberry Pi by plugging in the power cable
@@ -26,15 +26,15 @@ For debug purposes, all available quotes and images can be printed at once. This
 To do so, press and hold the push button for at least 5 seconds within 20 seconds after the welcome line has been printed.
 
 ### Create new Quotes
-Quotes can be created by editing the `goodVibes.csv` file. Please not that there is no automatic new line if a quote is too long. Instead, use `\n` within a quote to mark a new line.
+Quotes can be created by editing the `main_code/goodVibes.csv` file. Please note that there is no automatic new line if a quote is too long. Instead, use `\n` within a quote to mark a new line.
 
 After editing is done, check below on how to update the files on the Pi
 
 ### Create new images
-Before each quote, an image can be printed. New images can be generated using the helper file `bmp_converter\main.py` which converts any regular png or jpg file into monocolor binary format
+Before each quote, an image can be printed. New images can be generated using the helper file `bmp_converter/main.py` which converts any regular png or jpg file into monocolor binary format
 
 ### Change other translations
-Other translations, like the welcome line, can be changed by editing the `strings.json` file.
+Other translations, like the welcome line, can be changed by editing the `main_code/strings.json` file.
 
 ### Upload changes to Raspberry Pi
 All texts can be changed using a Web Interface. 
@@ -52,6 +52,8 @@ In this project, the [Codepage 850](https://de.wikipedia.org/wiki/Codepage_850) 
 You can use the following code snippet in terminal to print a sample text using the standard Unix/Linux printing command from the CUPS printing system:
 
 ```python
+import subprocess
+
 escpos_data = b"\x1b@\nHello receipt\n\x1dV\x00"
 subprocess.run(["lp", "-o", "raw"], input=escpos_data, check=True)
 ```
@@ -70,12 +72,12 @@ The code uses Physical Pin 10 (GPIO15) with an internal pull-up resistor, so the
 
 `PIN 10 (GPIO15) -> Button -> PIN 6 (GND)`
 
-Fur debug purposes, you could also press the `ENTER` key on your keyboard to trigger a printout.
+For debug purposes, you could also press the `ENTER` key on your keyboard to trigger a printout.
 
 ### Add Server Support
 Optionally, you can setup a hotspot and a PHP Server to upload new quotes via web interface.
 - Setup Hotspot by calling `server/setup_hotspot.sh`
-- Autostart Hotsport by putting `server/start_hotspot.sh` to `~/.bashrc`
+- Autostart Hotspot by putting `server/start_hotspot.sh` to `~/.bashrc`
 - install php: `sudo apt-get install php`
 - adopt rights: `chmod -R 777 /var/www/html`
 - install php zip: `sudo apt-get install php5-zip`
@@ -84,7 +86,7 @@ All files uploaded via Webinterface will automatically be recognized after reboo
 
 
 ### Execute the Code
-Simply run `main.py` to run the code.
+Simply run `main_code/main.py` to run the code.
 
 ### Autostart Python File
 open bashrc using `nano ~/.bashrc` and put your python code at the end of file.
