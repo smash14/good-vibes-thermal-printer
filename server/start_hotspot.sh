@@ -71,6 +71,17 @@ if [ "$HOSTAPD_OK" = "yes" ] && [ "$DNSMASQ_OK" = "yes" ]; then
     echo "[Hotspot] ✓ Hotspot started successfully"
     echo "[Hotspot] Connect to 'goodvibes' with password 'goodvibes123'"
     echo "[Hotspot] Hotspot IP: 192.168.4.1"
+    echo "[Hotspot] Hotspot will auto-disable in 20 minutes"
+    
+    # Schedule automatic disable after 20 minutes (1200 seconds)
+    (
+        sleep 1200
+        echo "[Hotspot] Auto-disabling hotspot after 20 minutes..."
+        sudo /bin/systemctl stop hostapd 2>/dev/null || true
+        sudo /bin/systemctl stop dnsmasq 2>/dev/null || true
+        echo "[Hotspot] Hotspot disabled"
+    ) &
+    
     return 0 2>/dev/null || exit 0
 else
     echo "[Hotspot] ✗ Failed to start hotspot"

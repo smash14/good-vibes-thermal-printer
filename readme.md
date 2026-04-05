@@ -38,8 +38,10 @@ Other translations, like the welcome line, can be changed by editing the `main_c
 
 ### Upload changes to Raspberry Pi
 All texts can be changed using a Web Interface. 
+> [!NOTE]
+> The web interface gets disabled automatically 20 minutes after boot up.
 1) Connect to the Wireless Network "goodvibes" with passphrase "goodvibes123"
-2) Open Web Browser and open page "192.168.4.1"
+2) Open Web Browser and navigate to "192.168.4.1"
 3) The Web Interface now allows uploading new texts
 4) Restart Pi to apply changes
 
@@ -78,6 +80,7 @@ For debug purposes, you could also press the `ENTER` key on your keyboard to tri
 Optionally, you can setup a hotspot and a PHP Server to upload new quotes via web interface.
 - Setup Hotspot by calling `server/setup_hotspot.sh`
 - Autostart Hotspot by putting `server/start_hotspot.sh` to `~/.bashrc`
+- The hotspot will be active for 20 minutes after each system booot up
 - install php: `sudo apt-get install php`
 - adopt rights: `chmod -R 777 /var/www/html`
 - install php zip: `sudo apt-get install php5-zip`
