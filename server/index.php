@@ -8,6 +8,42 @@ $csvFile = "goodVibes.csv";
 $imgDir = "header_images/";
 $stringsFile = "strings.json";
 $stringsDefaultFile = "strings_default.json";
+$maxLineLength = 42; // Maximum characters per line (configurable)
+
+// Function to format quotes with proper line breaks
+function formatQuoteLineLength($text, $maxLength) {
+    $lines = explode("\n", $text);
+    $result = [];
+    
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (strlen($line) <= $maxLength) {
+            $result[] = $line;
+        } else {
+            // Need to break this line
+            while (strlen($line) > $maxLength) {
+                // Find the last space before maxLength
+                $substring = substr($line, 0, $maxLength);
+                $lastSpace = strrpos($substring, ' ');
+                
+                if ($lastSpace === false) {
+                    // No space found, add the whole thing (can't break word)
+                    $result[] = $line;
+                    break;
+                } else {
+                    // Add the part up to the last space
+                    $result[] = substr($line, 0, $lastSpace);
+                    $line = trim(substr($line, $lastSpace));
+                }
+            }
+            if (!empty($line)) {
+                $result[] = $line;
+            }
+        }
+    }
+    
+    return implode("\n", $result);
+}
 
 // Ensure directory exists
 if (!file_exists($imgDir)) {
@@ -31,6 +67,77 @@ if (isset($_GET['download_csv'])) {
         exit;
     } else {
         echo "CSV file not found.<br>";
+    }
+}
+
+// Handle CSV row operations (add, edit, delete)
+if (isset($_POST['action'])) {
+    $action = $_POST['action'];
+    
+    if ($action === 'add' && isset($_POST['new_entry'])) {
+        // Add new row
+        $newEntry = $_POST['new_entry'];
+        if (!empty($newEntry)) {
+            $newEntry = formatQuoteLineLength($newEntry, $maxLineLength);
+            $fp = fopen($csvFile, 'a');
+            fputcsv($fp, [$newEntry]);
+            fclose($fp);
+            echo "<p style='color: green;'>Entry added successfully!</p>";
+        }
+    } 
+    elseif ($action === 'delete' && isset($_POST['row_index'])) {
+        // Delete row by index
+        $rowIndex = (int)$_POST['row_index'];
+        if (file_exists($csvFile)) {
+            $rows = [];
+            if (($handle = fopen($csvFile, 'r')) !== FALSE) {
+                while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+                    $rows[] = $data;
+                }
+                fclose($handle);
+            }
+            
+            if (isset($rows[$rowIndex])) {
+                unset($rows[$rowIndex]);
+                $rows = array_values($rows); // Re-index array
+                
+                // Write back to CSV
+                $fp = fopen($csvFile, 'w');
+                foreach ($rows as $row) {
+                    fputcsv($fp, $row);
+                }
+                fclose($fp);
+                echo "<p style='color: green;'>Entry deleted successfully!</p>";
+            }
+        }
+    }
+    elseif ($action === 'update' && isset($_POST['row_index']) && isset($_POST['updated_entry'])) {
+        // Update row by index
+        $rowIndex = (int)$_POST['row_index'];
+        $updatedEntry = $_POST['updated_entry'];
+        
+        if (file_exists($csvFile)) {
+            $rows = [];
+            if (($handle = fopen($csvFile, 'r')) !== FALSE) {
+                while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+                    $rows[] = $data;
+                }
+                fclose($handle);
+            }
+            
+            if (isset($rows[$rowIndex]) && !empty($updatedEntry)) {
+                $updatedEntry = formatQuoteLineLength($updatedEntry, $maxLineLength);
+                $rows[$rowIndex] = [$updatedEntry];
+                
+                // Write back to CSV
+                $fp = fopen($csvFile, 'w');
+                foreach ($rows as $row) {
+                    fputcsv($fp, $row);
+                }
+                fclose($fp);
+                echo "<p style='color: green;'>Entry updated successfully!</p>";
+            }
+        }
     }
 }
 
@@ -229,16 +336,37 @@ if (isset($_GET['download_all'])) {
 
 <h2>CSV Content (goodVibes.csv)</h2>
 
+<h3>Add New Entry</h3>
+<form method="post" style="margin-bottom: 20px;">
+    <textarea name="new_entry" placeholder="Enter new quote..." style="width: 100%; height: 80px; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-family: Arial, sans-serif;" required></textarea>
+    <button type="submit" name="action" value="add" style="margin-top: 10px;">Add Entry</button>
+</form>
+
 <?php
 if (file_exists($csvFile)) {
     if (($handle = fopen($csvFile, "r")) !== FALSE) {
         echo "<table>";
-        while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        echo "<tr><th>Index</th><th>Content</th><th>Actions</th></tr>";
+        $rowIndex = 0;
+        while (($data = fgetcsv($handle, 0, ",")) !== FALSE) {
+            $rawContent = isset($data[0]) ? $data[0] : '';
+            // Replace literal \n with actual newlines for display and functionality
+            $rawContent = str_replace('\\n', "\n", $rawContent);
+            $content = htmlspecialchars($rawContent);
+            $jsonContent = htmlspecialchars(json_encode($rawContent), ENT_QUOTES, 'UTF-8');
             echo "<tr>";
-            foreach ($data as $cell) {
-                echo "<td>" . htmlspecialchars($cell) . "</td>";
-            }
+            echo "<td>" . $rowIndex . "</td>";
+            echo "<td><pre style='margin: 0; white-space: pre-wrap; word-wrap: break-word;'>" . $content . "</pre></td>";
+            echo "<td>";
+            echo "<button type='button' onclick='editRow(" . $rowIndex . ", " . $jsonContent . ")'>Edit</button> ";
+            echo "<form method='post' style='display: inline-block; margin: 0;'>";
+            echo "<input type='hidden' name='action' value='delete'>";
+            echo "<input type='hidden' name='row_index' value='" . $rowIndex . "'>";
+            echo "<button type='submit' onclick=\"return confirm('Delete this entry?');\">Delete</button>";
+            echo "</form>";
+            echo "</td>";
             echo "</tr>";
+            $rowIndex++;
         }
         echo "</table>";
         fclose($handle);
@@ -249,6 +377,42 @@ if (file_exists($csvFile)) {
     echo "No CSV file found.";
 }
 ?>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4);">
+    <div style="background-color: white; margin: 10% auto; padding: 20px; border-radius: 6px; width: 90%; max-width: 600px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+        <span style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;" onclick="closeEditModal()">&times;</span>
+        <h3>Edit Entry</h3>
+        <form method="post">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" id="editRowIndex" name="row_index" value="">
+            <textarea id="editEntryContent" name="updated_entry" style="width: 100%; height: 100px; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-family: Arial, sans-serif;"></textarea>
+            <div style="margin-top: 15px;">
+                <button type="submit" style="background-color: #27ae60; margin-right: 10px;">Save Changes</button>
+                <button type="button" onclick="closeEditModal()" style="background-color: #95a5a6;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editRow(rowIndex, content) {
+    document.getElementById('editRowIndex').value = rowIndex;
+    document.getElementById('editEntryContent').value = content;
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+    var modal = document.getElementById('editModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
 
 <hr>
 
