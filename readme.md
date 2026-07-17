@@ -31,7 +31,7 @@ Quotes can be created by editing the `main_code/goodVibes.csv` file. Please note
 After editing is done, check below on how to update the files on the Pi
 
 ### Create new images
-Before each quote, an image can be printed. New images can be generated using the helper file `bmp_converter/main.py` which converts any regular png or jpg file into monocolor binary format
+Before each quote, an image can be printed. New images can be added by uploading any common picture file (jpg, png, gif, bmp, webp, tiff - max 10MB) via the Web Interface. The picture is automatically converted into the printable monocolor format the next time the Raspberry Pi's main script starts (progress is printed on the receipt while this happens).
 
 ### Change other translations
 Other translations, like the welcome line, can be changed by editing the `main_code/strings.json` file.

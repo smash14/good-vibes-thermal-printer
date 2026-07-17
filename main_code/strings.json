@@ -34,5 +34,9 @@
   "error_encoding": {
     "description": "Error message when text encoding fails",
     "text": "error transcoding text"
+  },
+  "image_conversion_progress": {
+    "description": "Printed on the receipt while converting an uploaded image to .bin. {current} and {total} are replaced with progress numbers.",
+    "text": "Converting image\n{current} of {total}..."
   }
 }

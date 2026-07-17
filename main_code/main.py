@@ -7,6 +7,7 @@ CSV_FILE = "goodVibes.csv"
 IMAGE_FOLDER = "header_images"
 STRINGS_FILE = "strings.json"
 LOGFILE = "logfile.log"
+IMAGE_MAX_WIDTH = 384  # printer dot width, used when converting uploaded images
 
 import sys
 import time
@@ -21,6 +22,7 @@ else:
     import platform_windows as platform
 
 from print_buffer import PrintBuffer
+from image_converter import convert_pending_images
 
 
 # === Helper Functions ===
@@ -79,6 +81,8 @@ def main():
     platform.setup_gpio(BUTTON_PIN)
 
     buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image, STRINGS_FILE, IMAGE_FOLDER)
+    convert_pending_images(IMAGE_FOLDER, IMAGE_MAX_WIDTH, on_progress=buffer.print_conversion_progress)
+    platform.cleanup_printer_queue()
     buffer.print_bootup_lines(VERSION)
 
     startup_time = time.time()

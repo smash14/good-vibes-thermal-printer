@@ -215,3 +215,6 @@ __marimo__/
 # project folders
 IC/
 tools/
+
+# Claude Code project instructions
+CLAUDE.md

@@ -139,6 +139,13 @@ class PrintBuffer:
             logging.info(f"Printed image: {image_file}")
             time.sleep(2)  # Small delay between prints
 
+    def print_conversion_progress(self, current, total):
+        self._reset_font_styles()
+        self.set_text_align("center")
+        template = self.strings.get("image_conversion_progress", {}).get("text", "Converting image\n{current} of {total}...")
+        self.set_text(template.format(current=current, total=total))
+        self.print()
+
     def print_bootup_lines(self, version):
         bootup_msg = self.strings.get("bootup_message", {}).get("text", "All good vibes loaded\n{version}")
         self.set_text(bootup_msg.format(version=version))

@@ -9,6 +9,8 @@ $imgDir = "header_images/";
 $stringsFile = "strings.json";
 $stringsDefaultFile = "strings_default.json";
 $maxLineLength = 42; // Maximum characters per line (configurable)
+$maxImageUploadBytes = 10 * 1024 * 1024; // 10MB
+$allowedImageExtensions = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "tif", "tiff"];
 
 // Function to format quotes with proper line breaks
 function formatQuoteLineLength($text, $maxLength) {
@@ -180,6 +182,27 @@ if (isset($_POST['upload_bin']) && isset($_FILES['bin_file'])) {
     }
 }
 
+// Handle picture upload (auto-converted to .bin by main.py on next startup)
+if (isset($_POST['upload_image']) && isset($_FILES['image_file'])) {
+    $file = $_FILES['image_file'];
+    if ($file['error'] !== 0) {
+        echo "<p style='color: red;'>Picture upload failed (upload error).</p>";
+    } elseif ($file['size'] > $maxImageUploadBytes) {
+        echo "<p style='color: red;'>Picture upload failed: file exceeds the 10MB limit.</p>";
+    } else {
+        $filename = basename($file['name']);
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        if (!in_array($extension, $allowedImageExtensions, true)) {
+            echo "<p style='color: red;'>Picture upload failed: unsupported file type.</p>";
+        } elseif (@getimagesize($file['tmp_name']) === false) {
+            echo "<p style='color: red;'>Picture upload failed: file is not a valid image.</p>";
+        } else {
+            move_uploaded_file($file['tmp_name'], $imgDir . $filename);
+            echo "<p style='color: green;'>Picture uploaded successfully. It will be converted automatically the next time the printer starts.</p>";
+        }
+    }
+}
+
 // Delete all files in header_images
 if (isset($_POST['delete_all'])) {
     $files = glob($imgDir . '*');
@@ -317,6 +340,13 @@ if (isset($_GET['download_all'])) {
 </form>
 
 <hr>
+
+<h2>Upload Picture (jpg, png, gif, bmp, webp, tiff - max 10MB)</h2>
+<p>Converted to the printable format automatically the next time the printer starts.</p>
+<form method="post" enctype="multipart/form-data">
+    <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tif,.tiff" required>
+    <button type="submit" name="upload_image">Upload Picture</button>
+</form>
 
 <h2>Upload BIN file (to header_images/)</h2>
 <form method="post" enctype="multipart/form-data">
