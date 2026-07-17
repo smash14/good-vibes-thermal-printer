@@ -1,7 +1,7 @@
 {
   "bootup_message": {
     "description": "Message shown when system boots up, {version} will be replaced with actual version",
-    "text": "All good vibes loaded\n{version}\nWLAN - goodvibes\nPass. - goodvibes123"
+    "text": "All good vibes loaded\n{version}\nWLAN: goodvibes\nPass.: goodvibes123\nIP: 192.168.4.1\nHostname: kaffee"
   },
   "welcome_title": {
     "description": "Main welcome message displayed at startup",
