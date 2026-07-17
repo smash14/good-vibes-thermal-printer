@@ -105,6 +105,9 @@ class PrintBuffer:
         )
 
     def print(self):
+        if not self.text:
+            logging.info("Skipping print: text is empty.")
+            return
         self._print_raw(self._build())
 
     def print_image(self, filepath):
