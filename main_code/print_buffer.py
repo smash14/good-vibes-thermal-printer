@@ -50,7 +50,7 @@ class PrintBuffer:
                 strings = json.load(file)
             return strings
         except Exception as e:
-            logging.error(f"Failed to load strings.json: {e}")
+            logging.error(f"Failed to load strings.json from path {strings_path}: {e}")
             return {}
 
     def select_random_line(self):
