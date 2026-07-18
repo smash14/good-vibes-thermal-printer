@@ -1,22 +1,7 @@
 <?php
-/**
- * @var QuoteRepository $quotes
- * @var StringsRepository $strings
- * @var ImageRepository $images
- * @var Logfile $logfile
- * @var array{0: string, 1: string}|null $message
- */
+/** @var QuoteRepository $quotes */
+require __DIR__ . '/partials/header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<?php if ($message !== null): ?>
-    <p style="color: <?= $message[0] === 'success' ? 'green' : 'red' ?>;"><?= e($message[1]) ?></p>
-<?php endif; ?>
 
 <h2>Upload CSV (will replace goodVibes.csv)</h2>
 <form method="post" enctype="multipart/form-data">
@@ -26,45 +11,6 @@
 
 <h2>Download CSV</h2>
 <a href="?download_csv=1">Download goodVibes.csv</a>
-
-<hr>
-
-<h2>Upload strings.json (will replace strings.json)</h2>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="strings_file" accept=".json" required>
-    <button type="submit" name="upload_strings">Upload strings.json</button>
-</form>
-
-<h2>Download strings.json</h2>
-<a href="?download_strings=1">Download strings.json</a>
-
-<h2>Restore strings.json to Default</h2>
-<form method="post">
-    <button type="submit" name="restore_strings" onclick="return confirm('Are you sure you want to restore to default?')">Restore to Default</button>
-</form>
-
-<hr>
-
-<h2>Upload Picture (jpg, png, gif, bmp, webp, tiff - max 10MB)</h2>
-<p>Converted to the printable format automatically the next time the printer starts.</p>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tif,.tiff" required>
-    <button type="submit" name="upload_image">Upload Picture</button>
-</form>
-
-<h2>Upload BIN file (to header_images/)</h2>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="bin_file" required>
-    <button type="submit" name="upload_bin">Upload BIN</button>
-</form>
-
-<h2>Delete all files in header_images</h2>
-<form method="post">
-    <button type="submit" name="delete_all" onclick="return confirm('Are you sure?')">Delete All</button>
-</form>
-
-<h2>Download all files in header_images</h2>
-<a href="?download_all=1">Download as ZIP</a>
 
 <hr>
 
@@ -134,44 +80,4 @@ window.onclick = function(event) {
 }
 </script>
 
-<hr>
-
-<h2>Header Images Folder</h2>
-
-<?php $filenames = $images->listFilenames(); ?>
-<p><strong>Total files:</strong> <?= count($filenames) ?></p>
-<ul>
-    <?php foreach ($filenames as $filename): ?>
-        <li><?= e($filename) ?></li>
-    <?php endforeach; ?>
-</ul>
-
-<hr>
-
-<h2>strings.json Preview</h2>
-
-<?php if ($strings->exists()): ?>
-    <pre><?= e($strings->prettyContent()) ?></pre>
-<?php else: ?>
-    <p>No strings.json file found.</p>
-<?php endif; ?>
-
-<hr>
-
-<h2>Delete Logfile</h2>
-<form method="post">
-    <button type="submit" name="delete_logfile" onclick="return confirm('Are you sure you want to delete logfile.log?')">Delete Logfile</button>
-</form>
-
-<hr>
-
-<h2>Logfile Content (logfile.log)</h2>
-
-<?php if ($logfile->exists()): ?>
-    <pre><?= e($logfile->content()) ?></pre>
-<?php else: ?>
-    <p>No logfile.log found.</p>
-<?php endif; ?>
-
-</body>
-</html>
+<?php require __DIR__ . '/partials/footer.php'; ?>
