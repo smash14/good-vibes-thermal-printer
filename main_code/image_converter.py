@@ -37,6 +37,12 @@ def image_to_escpos_raster(
     angle in degrees (0, 90, 180, or 270) applied before anything else - useful for
     printing wide/landscape images along the paper's length instead of squeezing them
     down to the printer's fixed dot width.
+
+    The image is always resized to exactly max_width (upscaled or downscaled as
+    needed, aspect ratio preserved) so every printout uses the full paper width,
+    regardless of the source image's size or its size after rotation. This resize
+    happens on the grayscale image, before the black/white conversion below, so
+    upscaling interpolates continuous tones rather than already-binarized pixels.
     """
     image = Image.open(image_path).convert("L")
 
@@ -52,15 +58,15 @@ def image_to_escpos_raster(
     if contrast != 1.0:
         image = ImageEnhance.Contrast(image).enhance(contrast)
 
+    if image.width != max_width:
+        ratio = max_width / image.width
+        new_height = max(1, round(image.height * ratio))
+        image = image.resize((max_width, new_height), Image.LANCZOS)
+
     if threshold is None:
         image = image.convert("1")
     else:
         image = image.point(lambda p: 255 if p >= threshold else 0).convert("1")
-
-    if image.width > max_width:
-        ratio = max_width / image.width
-        new_height = int(image.height * ratio)
-        image = image.resize((max_width, new_height), Image.LANCZOS)
 
     width_bytes = (image.width + 7) // 8
     height = image.height
