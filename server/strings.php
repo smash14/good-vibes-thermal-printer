@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 $config = require __DIR__ . '/lib/bootstrap.php';
 $strings = new StringsRepository($config['stringsFile'], $config['stringsDefaultFile']);
+$system = new SystemControl($config['systemctlBinary']);
 
 if (isset($_GET['download_strings'])) {
     if (!$strings->exists()) {
@@ -32,6 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $key = (string) ($_POST['entry_key'] ?? '');
             $strings->updateEntryValue($key, (string) ($_POST['entry_value'] ?? ''));
             $message = ['success', "Updated \"{$key}\"."];
+        } elseif (isset($_POST['reboot_pi'])) {
+            $system->reboot();
+            $message = ['success', 'Rebooting the Raspberry Pi. The web interface will be unavailable until it restarts.'];
+        } elseif (isset($_POST['shutdown_pi'])) {
+            $system->shutdown();
+            $message = ['success', 'Shutting down the Raspberry Pi. Power it back on physically to use it again.'];
         }
     } catch (Throwable $e) {
         $message = ['error', $e->getMessage()];

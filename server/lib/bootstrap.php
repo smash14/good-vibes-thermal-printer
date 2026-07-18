@@ -17,5 +17,6 @@ require_once __DIR__ . '/StringsRepository.php';
 require_once __DIR__ . '/ImageRepository.php';
 require_once __DIR__ . '/ImageConverterRunner.php';
 require_once __DIR__ . '/Logfile.php';
+require_once __DIR__ . '/SystemControl.php';
 
 return require __DIR__ . '/../config.php';

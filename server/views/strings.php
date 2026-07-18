@@ -52,4 +52,15 @@ require __DIR__ . '/partials/header.php';
     <p>No strings.json file found.</p>
 <?php endif; ?>
 
+<hr>
+
+<h2>Power Control</h2>
+<p>Directly reboot or shut down the Raspberry Pi. Requires the one-time setup in <code>server/setup_power_control.sh</code>.</p>
+<form method="post" style="display: inline-block; margin-right: 10px;">
+    <button type="submit" name="reboot_pi" onclick="return confirm('Reboot the Raspberry Pi now? The web interface will be unavailable until it restarts.')">Reboot Pi</button>
+</form>
+<form method="post" style="display: inline-block;">
+    <button type="submit" name="shutdown_pi" onclick="return confirm('Shut down the Raspberry Pi now? You will need to physically power it back on.')">Shutdown Pi</button>
+</form>
+
 <?php require __DIR__ . '/partials/footer.php'; ?>

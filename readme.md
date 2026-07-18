@@ -45,6 +45,8 @@ All texts can be changed using a Web Interface.
 3) The Web Interface now allows uploading new texts
 4) Changes are picked up automatically within a short time while the printer is running - no restart needed. New quotes/images are also printed once automatically to confirm they arrived (this can be turned off, and the check interval adjusted, via the `runtime_print_on_update` / `runtime_poll_interval_seconds` entries in `strings.json`).
 
+The Settings page also has a "Power Control" section to reboot or shut down the Pi directly from the browser, without needing SSH access - see "Add Server Support" below for the one-time setup this requires.
+
 ## Development Instruction
 
 ### Test Mobile Thermal Printer Printout
@@ -85,6 +87,7 @@ Optionally, you can setup a hotspot and a PHP Server to upload new quotes via we
 - adopt rights: `chmod -R 777 /var/www/html`
 - install php zip: `sudo apt-get install php5-zip`
 - the PHP admin page shells out to `python3` (running `server/scripts/image_converter.py`) to do interactive image conversions when reviewing an upload - make sure `python3` and Pillow are available to whichever user Apache runs as (usually `www-data`), e.g. `sudo apt-get install python3-pil`
+- to enable the Settings page's Reboot/Shutdown buttons, run `sudo bash server/setup_power_control.sh` once - this grants `www-data` passwordless sudo access to exactly `systemctl poweroff` and `systemctl reboot`, nothing else. Without this step, clicking either button will show a permission error.
 
 While `main.py` is running, all files uploaded via Webinterface (quotes, images, strings.json) are automatically recognized within a short time (30 seconds by default, see `runtime_poll_interval_seconds` in `strings.json`) - no reboot needed. If the script isn't running yet, everything pending is picked up the next time it starts.
 
