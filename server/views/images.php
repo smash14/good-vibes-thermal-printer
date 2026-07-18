@@ -1,5 +1,8 @@
 <?php
-/** @var ImageRepository $images */
+/**
+ * @var ImageRepository $images
+ * @var array{imgDir: string} $config
+ */
 require __DIR__ . '/partials/header.php';
 ?>
 
@@ -28,12 +31,29 @@ require __DIR__ . '/partials/header.php';
 
 <h2>Header Images Folder</h2>
 
-<?php $filenames = $images->listFilenames(); ?>
-<p><strong>Total files:</strong> <?= count($filenames) ?></p>
-<ul>
-    <?php foreach ($filenames as $filename): ?>
-        <li><?= e($filename) ?></li>
+<?php $entries = $images->listEntries(); ?>
+<p><strong>Total images:</strong> <?= count($entries) ?></p>
+<div class="image-grid">
+    <?php foreach ($entries as $entry): ?>
+        <div class="image-card">
+            <?php if ($entry['thumbnail'] !== null): ?>
+                <img src="<?= e($config['imgDir'] . $entry['thumbnail']) ?>" alt="<?= e($entry['stem']) ?>">
+            <?php elseif ($entry['kind'] === 'converted'): ?>
+                <p class="image-card-placeholder">Preview pending next restart</p>
+            <?php else: ?>
+                <p class="image-card-placeholder">No preview available</p>
+            <?php endif; ?>
+            <p class="image-card-stem"><?= e($entry['stem']) ?></p>
+            <?php if ($entry['kind'] === 'pending'): ?>
+                <p class="image-card-status">Pending conversion</p>
+            <?php endif; ?>
+            <form method="post">
+                <input type="hidden" name="delete_entry" value="1">
+                <input type="hidden" name="stem" value="<?= e($entry['stem']) ?>">
+                <button type="submit" onclick="return confirm('Delete this image?')">Delete</button>
+            </form>
+        </div>
     <?php endforeach; ?>
-</ul>
+</div>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

@@ -22,7 +22,7 @@ else:
     import platform_windows as platform
 
 from print_buffer import PrintBuffer
-from image_converter import convert_pending_images
+from image_converter import convert_pending_images, generate_pending_previews
 
 
 # === Helper Functions ===
@@ -82,6 +82,7 @@ def main():
 
     buffer = PrintBuffer(CSV_FILE, platform.print_raw, platform.print_image, STRINGS_FILE, IMAGE_FOLDER)
     convert_pending_images(IMAGE_FOLDER, IMAGE_MAX_WIDTH, on_progress=buffer.print_conversion_progress)
+    generate_pending_previews(IMAGE_FOLDER)
     platform.cleanup_printer_queue()
     buffer.print_bootup_lines(VERSION)
 

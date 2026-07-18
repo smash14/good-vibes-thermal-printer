@@ -37,6 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (isset($_POST['delete_all'])) {
             $images->deleteAll();
             $message = ['success', 'All files deleted.'];
+        } elseif (isset($_POST['delete_entry'], $_POST['stem'])) {
+            $images->deleteEntry((string) $_POST['stem']);
+            $message = ['success', 'Image deleted.'];
         }
     } catch (Throwable $e) {
         $message = ['error', $e->getMessage()];

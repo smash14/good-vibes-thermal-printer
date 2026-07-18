@@ -41,6 +41,67 @@ def image_to_escpos_raster(image_path, output_bin_path, max_width=384):
         f.write(header + data)
 
 
+def escpos_raster_to_preview_image(bin_path, output_jpg_path):
+    """Convert an ESC/POS GS v 0 raster .bin file back into a viewable JPEG preview."""
+    with open(bin_path, "rb") as f:
+        data = f.read()
+
+    if data[:4] != b"\x1D\x76\x30\x00" or len(data) < 8:
+        raise ValueError(f"Not a recognized ESC/POS raster file: {bin_path}")
+
+    width_bytes = data[4] | (data[5] << 8)
+    height = data[6] | (data[7] << 8)
+    width = width_bytes * 8
+    pixel_data = data[8:]
+
+    image = Image.new("1", (width, height), 1)  # white background
+
+    for y in range(height):
+        row_offset = y * width_bytes
+        for x in range(width_bytes):
+            byte = pixel_data[row_offset + x]
+            for bit in range(8):
+                if byte & (1 << (7 - bit)):
+                    image.putpixel((x * 8 + bit, y), 0)  # black pixel
+
+    image.convert("L").save(output_jpg_path, "JPEG")
+
+
+def find_pending_previews(image_folder):
+    """Return sorted paths of .bin files in image_folder that have no matching preview .jpg yet."""
+    pending = []
+    for bin_path in glob.glob(os.path.join(image_folder, "*.bin")):
+        jpg_path = os.path.splitext(bin_path)[0] + ".jpg"
+        if not os.path.exists(jpg_path):
+            pending.append(bin_path)
+    return sorted(pending)
+
+
+def generate_pending_previews(image_folder):
+    """Generate a sibling preview .jpg for every .bin that doesn't have one yet.
+
+    Each file is converted inside its own try/except so one corrupt/unrecognized
+    .bin can't block the rest or crash startup. The .bin itself is never deleted
+    here, even on failure - a missing preview just means the web UI falls back to
+    a placeholder and retries on the next startup.
+    """
+    pending = find_pending_previews(image_folder)
+    if not pending:
+        logging.info("No pending image previews.")
+        return
+
+    logging.info(f"Found {len(pending)} image(s) pending preview generation.")
+
+    for bin_path in pending:
+        filename = os.path.basename(bin_path)
+        jpg_path = os.path.splitext(bin_path)[0] + ".jpg"
+        try:
+            escpos_raster_to_preview_image(bin_path, jpg_path)
+            logging.info(f"Generated preview for: {filename}")
+        except Exception as e:
+            logging.error(f"Failed to generate preview for {filename}: {e}")
+
+
 def find_pending_conversions(image_folder):
     """Return sorted paths of images in image_folder that have no matching .bin file yet."""
     pending = []
