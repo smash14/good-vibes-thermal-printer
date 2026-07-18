@@ -28,6 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (isset($_POST['restore_strings'])) {
             $strings->restoreDefault();
             $message = ['success', 'strings.json restored to default.'];
+        } elseif (isset($_POST['action']) && $_POST['action'] === 'update_entry') {
+            $key = (string) ($_POST['entry_key'] ?? '');
+            $strings->updateEntryValue($key, (string) ($_POST['entry_value'] ?? ''));
+            $message = ['success', "Updated \"{$key}\"."];
         }
     } catch (Throwable $e) {
         $message = ['error', $e->getMessage()];

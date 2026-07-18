@@ -3,6 +3,31 @@
 require __DIR__ . '/partials/header.php';
 ?>
 
+<h2>Settings</h2>
+
+<?php if ($strings->exists()): ?>
+    <?php foreach ($strings->getEntries() as $key => $entry): ?>
+        <?php
+            $text = $entry['text'] ?? '';
+            $displayValue = is_array($text) ? implode("\n", $text) : (string) $text;
+            $rows = max(2, substr_count($displayValue, "\n") + 1);
+        ?>
+        <form method="post" style="margin-bottom: 20px;">
+            <label for="entry_<?= e($key) ?>"><strong><?= e($key) ?></strong></label>
+            <?php if (!empty($entry['description'])): ?>
+                <p style="margin: 4px 0; color: #666; font-size: 0.9em;"><?= e($entry['description']) ?></p>
+            <?php endif; ?>
+            <textarea id="entry_<?= e($key) ?>" name="entry_value" rows="<?= $rows ?>" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-family: Arial, sans-serif;"><?= e($displayValue) ?></textarea>
+            <input type="hidden" name="entry_key" value="<?= e($key) ?>">
+            <button type="submit" name="action" value="update_entry" style="margin-top: 6px;">Save</button>
+        </form>
+    <?php endforeach; ?>
+<?php else: ?>
+    <p>No strings.json file found.</p>
+<?php endif; ?>
+
+<hr>
+
 <h2>Upload strings.json (will replace strings.json)</h2>
 <form method="post" enctype="multipart/form-data">
     <input type="file" name="strings_file" accept=".json" required>

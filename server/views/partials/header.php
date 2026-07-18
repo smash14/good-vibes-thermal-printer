@@ -8,7 +8,7 @@ $navLinks = [
     'menu' => ['index.php', 'Menu'],
     'quotes' => ['quotes.php', 'Quotes'],
     'images' => ['images.php', 'Images'],
-    'strings' => ['strings.php', 'Strings'],
+    'strings' => ['strings.php', 'Settings'],
     'logfile' => ['logfile.php', 'Logfile'],
 ];
 ?>
