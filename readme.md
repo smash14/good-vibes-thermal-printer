@@ -31,7 +31,7 @@ Quotes can be created by editing the `main_code/goodVibes.csv` file. Please note
 After editing is done, check below on how to update the files on the Pi
 
 ### Create new images
-Before each quote, an image can be printed. New images can be added by uploading any common picture file (jpg, png, gif, bmp, webp, tiff - max 10MB) via the Web Interface. While the main script is running, it periodically checks for new pictures (every 30 seconds by default) and converts them into the printable monocolor format automatically - the new image is then printed once, announced with a short header line, so you know it's ready. If the script isn't running yet, the conversion instead happens the next time it starts (with progress printed on the receipt).
+Before each quote, an image can be printed. New images can be added by uploading any common picture file (jpg, png, gif, bmp, webp, tiff - max 10MB) via the Web Interface. The upload is immediately converted to a black & white preview, which is shown on the page along with rotation, auto-contrast, brightness, contrast, and threshold controls - rotate widescreen/landscape photos 90° so they print along the paper's length instead of being squeezed down to the printer's width, try "Auto-contrast" as a quick one-click fix for flat/washed-out photos, adjust the other settings as needed, and click "Regenerate Preview" as many times as you like, then click "Save Image" once you're happy with the result (or "Discard" to cancel). If an image with the same name already exists, saving keeps both as separate images instead of overwriting the existing one - unwanted duplicates can be removed with the Delete button. Only after saving does the image become part of the header image rotation - while the main script is running, it picks up the new `.bin` file and prints it once, announced with a short header line, so you know it's ready. If the script isn't running yet, that first announcement print instead happens the next time it starts.
 
 ### Change other translations
 Other translations, like the welcome line, can be changed by editing the `main_code/strings.json` file. Like quotes and images, changes are picked up automatically while the main script is running, without needing a restart.
@@ -84,6 +84,7 @@ Optionally, you can setup a hotspot and a PHP Server to upload new quotes via we
 - install php: `sudo apt-get install php`
 - adopt rights: `chmod -R 777 /var/www/html`
 - install php zip: `sudo apt-get install php5-zip`
+- the PHP admin page shells out to `python3` (running `server/scripts/image_converter.py`) to do interactive image conversions when reviewing an upload - make sure `python3` and Pillow are available to whichever user Apache runs as (usually `www-data`), e.g. `sudo apt-get install python3-pil`
 
 While `main.py` is running, all files uploaded via Webinterface (quotes, images, strings.json) are automatically recognized within a short time (30 seconds by default, see `runtime_poll_interval_seconds` in `strings.json`) - no reboot needed. If the script isn't running yet, everything pending is picked up the next time it starts.
 

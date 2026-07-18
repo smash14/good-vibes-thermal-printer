@@ -15,6 +15,7 @@ require_once __DIR__ . '/QuoteFormatter.php';
 require_once __DIR__ . '/QuoteRepository.php';
 require_once __DIR__ . '/StringsRepository.php';
 require_once __DIR__ . '/ImageRepository.php';
+require_once __DIR__ . '/ImageConverterRunner.php';
 require_once __DIR__ . '/Logfile.php';
 
 return require __DIR__ . '/../config.php';

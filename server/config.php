@@ -13,4 +13,7 @@ return [
     'maxLineLength' => 42,
     'maxImageUploadBytes' => 10 * 1024 * 1024,
     'allowedImageExtensions' => ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tif', 'tiff'],
+    'imageMaxWidth' => 384,
+    'pythonBinary' => 'python3',
+    'imageConverterScript' => __DIR__ . '/scripts/image_converter.py',
 ];

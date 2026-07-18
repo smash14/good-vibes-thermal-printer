@@ -4,14 +4,63 @@
  * @var array{imgDir: string} $config
  */
 require __DIR__ . '/partials/header.php';
+
+$pendingReview = $images->getPendingReview();
 ?>
 
-<h2>Upload Picture (jpg, png, gif, bmp, webp, tiff - max 10MB)</h2>
-<p>Converted to the printable format automatically while the printer is running (or at the latest the next time it starts).</p>
-<form method="post" enctype="multipart/form-data">
-    <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tif,.tiff" required>
-    <button type="submit" name="upload_image">Upload Picture</button>
-</form>
+<?php if ($pendingReview !== null): ?>
+    <h2>Review &amp; Adjust: <?= e($pendingReview['stem']) ?></h2>
+    <?php if ($pendingReview['hasPreview']): ?>
+        <img src="<?= e($config['imgDir'] . '.review/' . $pendingReview['stem'] . '.jpg') ?>" alt="Preview" style="max-width: 300px; display: block; margin-bottom: 10px;">
+    <?php else: ?>
+        <p>Preview not available.</p>
+    <?php endif; ?>
+
+    <form method="post">
+        <label for="rotation">Rotation (use for wide/landscape images)</label><br>
+        <select id="rotation" name="rotation">
+            <?php foreach ([0 => 'No rotation', 90 => '90° clockwise', 180 => '180°', 270 => '90° counter-clockwise'] as $degrees => $label): ?>
+                <option value="<?= $degrees ?>" <?= $pendingReview['rotation'] === $degrees ? 'selected' : '' ?>><?= e($label) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <br><br>
+        <label>
+            <input type="checkbox" name="auto_contrast" <?= $pendingReview['autoContrast'] ? 'checked' : '' ?>>
+            Auto-contrast (stretch to full black/white range - good one-click fix for flat/washed-out photos)
+        </label>
+        <br><br>
+        <label for="brightness">Brightness (0.5&ndash;2.0, 1.0 = unchanged)</label><br>
+        <input type="number" id="brightness" name="brightness" step="0.1" min="0.5" max="2.0" value="<?= e((string) $pendingReview['brightness']) ?>">
+        <br><br>
+        <label for="contrast">Contrast (0.5&ndash;2.0, 1.0 = unchanged)</label><br>
+        <input type="number" id="contrast" name="contrast" step="0.1" min="0.5" max="2.0" value="<?= e((string) $pendingReview['contrast']) ?>">
+        <br><br>
+        <label>
+            <input type="checkbox" name="use_threshold" <?= $pendingReview['threshold'] !== null ? 'checked' : '' ?>>
+            Use fixed threshold instead of automatic dithering
+        </label>
+        <br>
+        <label for="threshold">Threshold (0&ndash;255)</label><br>
+        <input type="number" id="threshold" name="threshold" min="0" max="255" value="<?= e((string) ($pendingReview['threshold'] ?? 128)) ?>">
+        <br><br>
+        <button type="submit" name="action" value="regenerate_preview">Regenerate Preview</button>
+    </form>
+
+    <form method="post" style="display: inline-block; margin-right: 10px;">
+        <button type="submit" name="action" value="save_review">Save Image</button>
+    </form>
+    <form method="post" style="display: inline-block;">
+        <button type="submit" name="action" value="discard_review" onclick="return confirm('Discard this staged image?')">Discard</button>
+    </form>
+    <p style="color: #777; font-size: 13px;">If an image with this name already exists, saving will keep both (e.g. as "<?= e($pendingReview['stem']) ?>_2") instead of overwriting it.</p>
+<?php else: ?>
+    <h2>Upload Picture (jpg, png, gif, bmp, webp, tiff - max 10MB)</h2>
+    <p>You'll be able to preview the converted result and adjust contrast/threshold before it's saved.</p>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tif,.tiff" required>
+        <button type="submit" name="upload_image">Upload Picture</button>
+    </form>
+<?php endif; ?>
 
 <h2>Upload BIN file (to header_images/)</h2>
 <form method="post" enctype="multipart/form-data">

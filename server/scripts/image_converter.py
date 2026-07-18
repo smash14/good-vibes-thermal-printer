@@ -1,3 +1,8 @@
+# Deployed duplicate of main_code/image_converter.py, kept here so www-data (Apache)
+# can execute it directly for interactive conversions triggered from images.php -
+# the canonical copy under the main_code checkout is not readable by www-data.
+# Keep this file in sync with main_code/image_converter.py whenever that one changes.
+
 import glob
 import logging
 import os

@@ -41,7 +41,24 @@ final class ImageRepository
         }
     }
 
-    public function uploadPicture(array $uploadedFile): void
+    public function deleteAll(): void
+    {
+        foreach ($this->listFiles() as $file) {
+            unlink($file);
+        }
+    }
+
+    /**
+     * Stage an uploaded picture for review: validates it (extension allow-list,
+     * size limit, must be a real image), stores it under a hidden .review/
+     * subfolder (invisible to both listEntries() and main.py's non-recursive
+     * header_images/ scanning, so it can't be picked up as a gallery entry or
+     * auto-converted before it's saved), and runs an initial conversion with
+     * default settings so a preview is ready immediately. Only one image may be
+     * under review at a time; staging a new one discards whatever was previously
+     * staged.
+     */
+    public function stageUpload(array $uploadedFile, ImageConverterRunner $converter, int $maxWidth = 384): void
     {
         if ($uploadedFile['error'] !== UPLOAD_ERR_OK) {
             throw new RuntimeException('Picture upload failed (upload error).');
@@ -59,16 +76,167 @@ final class ImageRepository
             throw new RuntimeException('Picture upload failed: file is not a valid image.');
         }
 
-        if (!move_uploaded_file($uploadedFile['tmp_name'], $this->dir . $filename)) {
+        $this->discardReview();
+
+        $reviewDir = $this->reviewDir();
+        if (!file_exists($reviewDir)) {
+            mkdir($reviewDir, 0777, true);
+        }
+
+        $stem = pathinfo($filename, PATHINFO_FILENAME);
+        // Named "original.<ext>" rather than "<stem>.<ext>" so it can never collide
+        // with the "<stem>.bin"/"<stem>.jpg" files regeneratePreview() writes into
+        // this same folder (which would happen whenever the upload itself is a
+        // .jpg) - regenerating would otherwise silently re-convert an
+        // already-converted preview instead of the true original.
+        $originalFilename = 'original.' . $extension;
+        if (!move_uploaded_file($uploadedFile['tmp_name'], $reviewDir . $originalFilename)) {
             throw new RuntimeException('Could not save uploaded picture.');
+        }
+
+        $meta = [
+            'stem' => $stem,
+            'original' => $originalFilename,
+            'contrast' => 1.0,
+            'threshold' => null,
+            'rotation' => 0,
+            'brightness' => 1.0,
+            'autoContrast' => false,
+        ];
+        $this->writeReviewMeta($meta);
+
+        $this->regeneratePreview($converter, 1.0, null, $maxWidth, 0, 1.0, false);
+    }
+
+    /**
+     * @return array{stem: string, original: string, contrast: float, threshold: ?int, rotation: int, brightness: float, autoContrast: bool, hasPreview: bool}|null
+     */
+    public function getPendingReview(): ?array
+    {
+        $meta = $this->readReviewMeta();
+        if ($meta === null) {
+            return null;
+        }
+
+        $meta['hasPreview'] = file_exists($this->reviewDir() . $meta['stem'] . '.jpg');
+        return $meta;
+    }
+
+    /** Re-run conversion from the staged original with new settings. */
+    public function regeneratePreview(
+        ImageConverterRunner $converter,
+        float $contrast,
+        ?int $threshold,
+        int $maxWidth = 384,
+        int $rotation = 0,
+        float $brightness = 1.0,
+        bool $autoContrast = false
+    ): void {
+        $meta = $this->readReviewMeta();
+        if ($meta === null) {
+            throw new RuntimeException('No image is currently staged for review.');
+        }
+
+        $reviewDir = $this->reviewDir();
+        $originalPath = $reviewDir . $meta['original'];
+        $binPath = $reviewDir . $meta['stem'] . '.bin';
+        $previewPath = $reviewDir . $meta['stem'] . '.jpg';
+
+        $converter->convert($originalPath, $binPath, $previewPath, $contrast, $threshold, $maxWidth, $rotation, $brightness, $autoContrast);
+
+        $meta['contrast'] = $contrast;
+        $meta['threshold'] = $threshold;
+        $meta['rotation'] = $rotation;
+        $meta['brightness'] = $brightness;
+        $meta['autoContrast'] = $autoContrast;
+        $this->writeReviewMeta($meta);
+    }
+
+    /**
+     * Finalize the staged review image into header_images/. If the stem is already
+     * taken by an existing entry, a numeric suffix (_2, _3, ...) is appended instead
+     * of overwriting it - duplicates can be told apart and cleaned up via Delete in
+     * the UI rather than one silently replacing the other.
+     *
+     * @return string the stem the image was actually saved under
+     */
+    public function saveReview(): string
+    {
+        $meta = $this->readReviewMeta();
+        if ($meta === null) {
+            throw new RuntimeException('No image is currently staged for review.');
+        }
+
+        $reviewDir = $this->reviewDir();
+        $binPath = $reviewDir . $meta['stem'] . '.bin';
+        $previewPath = $reviewDir . $meta['stem'] . '.jpg';
+
+        if (!file_exists($binPath)) {
+            throw new RuntimeException('Staged image has no converted .bin file yet.');
+        }
+
+        $finalStem = $this->uniqueStem($meta['stem']);
+
+        rename($binPath, $this->dir . $finalStem . '.bin');
+        if (file_exists($previewPath)) {
+            rename($previewPath, $this->dir . $finalStem . '.jpg');
+        }
+
+        $this->discardReview();
+
+        return $finalStem;
+    }
+
+    /** Find a stem not already used by any file in header_images/, appending _2, _3, ... if needed. */
+    private function uniqueStem(string $stem): string
+    {
+        if ((glob($this->dir . $stem . '.*') ?: []) === []) {
+            return $stem;
+        }
+
+        $counter = 2;
+        while ((glob($this->dir . $stem . '_' . $counter . '.*') ?: []) !== []) {
+            $counter++;
+        }
+        return $stem . '_' . $counter;
+    }
+
+    /** Discard whatever is currently staged for review, if anything. */
+    public function discardReview(): void
+    {
+        $reviewDir = $this->reviewDir();
+        if (!file_exists($reviewDir)) {
+            return;
+        }
+        foreach (array_filter(glob($reviewDir . '*') ?: [], 'is_file') as $file) {
+            unlink($file);
         }
     }
 
-    public function deleteAll(): void
+    private function reviewDir(): string
     {
-        foreach ($this->listFiles() as $file) {
-            unlink($file);
+        return $this->dir . '.review/';
+    }
+
+    private function reviewMetaPath(): string
+    {
+        return $this->reviewDir() . 'meta.json';
+    }
+
+    /** @return array{stem: string, original: string, contrast: float, threshold: ?int, rotation: int, brightness: float, autoContrast: bool}|null */
+    private function readReviewMeta(): ?array
+    {
+        $path = $this->reviewMetaPath();
+        if (!file_exists($path)) {
+            return null;
         }
+        $decoded = json_decode((string) file_get_contents($path), true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    private function writeReviewMeta(array $meta): void
+    {
+        file_put_contents($this->reviewMetaPath(), (string) json_encode($meta));
     }
 
     /**
