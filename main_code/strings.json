@@ -39,6 +39,22 @@
     "description": "Printed on the receipt while converting an uploaded image to .bin. {current} and {total} are replaced with progress numbers.",
     "text": "Converting image\n{current} of {total}..."
   },
+  "print_welcome_enabled": {
+    "description": "Whether a short button press prints the welcome lines (title + decoration) at the start. Uncheck to skip.",
+    "text": "true"
+  },
+  "print_quotes_enabled": {
+    "description": "Whether a short button press prints a random quote. Uncheck to skip quotes.",
+    "text": "true"
+  },
+  "print_images_enabled": {
+    "description": "Whether a short button press prints a random header image. Uncheck to skip images.",
+    "text": "true"
+  },
+  "print_finish_enabled": {
+    "description": "Whether a short button press prints the sign-off finish line at the end. Uncheck to skip.",
+    "text": "true"
+  },
   "runtime_poll_interval_seconds": {
     "description": "How often (in seconds) the background thread checks for new/updated quotes and images. 0 or less disables periodic checking.",
     "text": "30"

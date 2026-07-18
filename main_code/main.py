@@ -67,6 +67,12 @@ def get_random_image():
     return random.choice(image_files)
 
 
+def get_bool_setting(buffer, key, default=True):
+    """Read a "true"/"false" toggle from strings.json, matching runtime_updater.py's convention."""
+    raw = buffer.strings.get(key, {}).get("text", "true" if default else "false")
+    return str(raw).strip().lower() in ("1", "true", "yes", "on")
+
+
 # === Main Logic ===
 def main():
     resolve_file_paths()
@@ -118,16 +124,22 @@ def main():
             elif press_duration >= SHORT_PRESS_MIN_DURATION:
                 logging.info("Short press detected: printing coffee quote.")
                 with print_lock:
-                    buffer.print_welcome_lines()
+                    if get_bool_setting(buffer, "print_welcome_enabled"):
+                        buffer.print_welcome_lines()
 
-                    random_image = get_random_image()
-                    if random_image:
-                        buffer.print_image(random_image)
-                        logging.info(f"Selected image: {random_image}")
+                    if get_bool_setting(buffer, "print_images_enabled"):
+                        random_image = get_random_image()
+                        if random_image:
+                            buffer.print_image(random_image)
+                            logging.info(f"Selected image: {random_image}")
 
-                    buffer.print_random_quote()
-                    buffer.print_finish_line()
-                    logging.info(f"Selected line: {buffer.text}")
+                    if get_bool_setting(buffer, "print_quotes_enabled"):
+                        buffer.print_random_quote()
+                        logging.info(f"Selected line: {buffer.text}")
+
+                    if get_bool_setting(buffer, "print_finish_enabled"):
+                        buffer.print_finish_line()
+
                     total_quotes_printed += 1
                     logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
                     time.sleep(3)

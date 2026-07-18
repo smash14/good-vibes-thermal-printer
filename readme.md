@@ -45,6 +45,8 @@ All texts can be changed using a Web Interface.
 3) The Web Interface now allows uploading new texts
 4) Changes are picked up automatically within a short time while the printer is running - no restart needed. New quotes/images are also printed once automatically to confirm they arrived (this can be turned off, and the check interval adjusted, via the `runtime_print_on_update` / `runtime_poll_interval_seconds` entries in `strings.json`).
 
+The Settings page also lets you tick "print_welcome_enabled" / "print_quotes_enabled" / "print_images_enabled" / "print_finish_enabled" on or off to control which parts of a button-press printout (welcome lines, quote, header image, sign-off line) actually get printed - all four are on by default.
+
 The Settings page also has a "Power Control" section to reboot or shut down the Pi directly from the browser, without needing SSH access - see "Add Server Support" below for the one-time setup this requires.
 
 ## Development Instruction

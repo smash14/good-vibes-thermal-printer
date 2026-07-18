@@ -17,7 +17,12 @@ require __DIR__ . '/partials/header.php';
             <?php if (!empty($entry['description'])): ?>
                 <p style="margin: 4px 0; color: #666; font-size: 0.9em;"><?= e($entry['description']) ?></p>
             <?php endif; ?>
-            <textarea id="entry_<?= e($key) ?>" name="entry_value" rows="<?= $rows ?>" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-family: Arial, sans-serif;"><?= e($displayValue) ?></textarea>
+            <?php if (in_array($key, ['print_welcome_enabled', 'print_quotes_enabled', 'print_images_enabled', 'print_finish_enabled'], true)): ?>
+                <input type="hidden" name="entry_value" value="false">
+                <input type="checkbox" id="entry_<?= e($key) ?>" name="entry_value" value="true" <?= $displayValue === 'true' ? 'checked' : '' ?>>
+            <?php else: ?>
+                <textarea id="entry_<?= e($key) ?>" name="entry_value" rows="<?= $rows ?>" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-family: Arial, sans-serif;"><?= e($displayValue) ?></textarea>
+            <?php endif; ?>
             <input type="hidden" name="entry_key" value="<?= e($key) ?>">
             <button type="submit" name="action" value="update_entry" style="margin-top: 6px;">Save</button>
         </form>
