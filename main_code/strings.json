@@ -38,5 +38,21 @@
   "image_conversion_progress": {
     "description": "Printed on the receipt while converting an uploaded image to .bin. {current} and {total} are replaced with progress numbers.",
     "text": "Converting image\n{current} of {total}..."
+  },
+  "runtime_poll_interval_seconds": {
+    "description": "How often (in seconds) the background thread checks for new/updated quotes and images. 0 or less disables periodic checking.",
+    "text": "30"
+  },
+  "runtime_print_on_update": {
+    "description": "Whether newly detected quotes/images should be printed once automatically. Set to \"false\" to only convert/reload silently.",
+    "text": "true"
+  },
+  "runtime_new_quote_announcement": {
+    "description": "Printed before a newly detected quote is auto-printed.",
+    "text": "New good vibe added!"
+  },
+  "runtime_new_image_announcement": {
+    "description": "Printed before a newly detected header image is auto-printed.",
+    "text": "New image added!"
   }
 }

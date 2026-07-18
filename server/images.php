@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = ['success', 'BIN file uploaded successfully.'];
         } elseif (isset($_POST['upload_image'], $_FILES['image_file'])) {
             $images->uploadPicture($_FILES['image_file']);
-            $message = ['success', 'Picture uploaded successfully. It will be converted automatically the next time the printer starts.'];
+            $message = ['success', 'Picture uploaded successfully. It will be converted automatically while the printer is running (or at the latest the next time it starts).'];
         } elseif (isset($_POST['delete_all'])) {
             $images->deleteAll();
             $message = ['success', 'All files deleted.'];

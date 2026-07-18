@@ -15,6 +15,7 @@ import logging
 import os
 import glob
 import random
+import threading
 
 if sys.platform == "linux":
     import platform_linux as platform
@@ -23,6 +24,7 @@ else:
 
 from print_buffer import PrintBuffer
 from image_converter import convert_pending_images, generate_pending_previews
+from runtime_updater import start_background_updater
 
 
 # === Helper Functions ===
@@ -86,10 +88,13 @@ def main():
     platform.cleanup_printer_queue()
     buffer.print_bootup_lines(VERSION)
 
+    print_lock = threading.Lock()
+    start_background_updater(buffer, IMAGE_FOLDER, IMAGE_MAX_WIDTH, platform.cleanup_printer_queue, print_lock)
+
     startup_time = time.time()
     bootup_window = 20  # 20 seconds window
     total_quotes_printed = 0  # Track total quotes printed since bootup
-                    
+
     try:
         while True:
             press_duration = platform.wait_for_button(BUTTON_PIN)
@@ -98,32 +103,35 @@ def main():
             if press_duration >= LONG_PRESS_THRESHOLD:
                 if time_since_startup < bootup_window:
                     logging.info("Long press detected during bootup window: printing all quotes and images")
-                    buffer.print_all_quotes()
-                    buffer.print_all_images()
-                    time.sleep(3)
-                    platform.cleanup_printer_queue()
+                    with print_lock:
+                        buffer.print_all_quotes()
+                        buffer.print_all_images()
+                        time.sleep(3)
+                        platform.cleanup_printer_queue()
                 else:
                     logging.info("Long press detected: shutting down.")
                     logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
-                    buffer.set_text(f"Shutting down all the good vibes...\n\n{total_quotes_printed} good vibes shared!")
-                    buffer.print()
+                    with print_lock:
+                        buffer.set_text(f"Shutting down all the good vibes...\n\n{total_quotes_printed} good vibes shared!")
+                        buffer.print()
                     platform.shutdown()
             elif press_duration >= SHORT_PRESS_MIN_DURATION:
                 logging.info("Short press detected: printing coffee quote.")
-                buffer.print_welcome_lines()
-                
-                random_image = get_random_image()
-                if random_image:
-                    buffer.print_image(random_image)
-                    logging.info(f"Selected image: {random_image}")
-                
-                buffer.print_random_quote()
-                buffer.print_finish_line()
-                logging.info(f"Selected line: {buffer.text}")
-                total_quotes_printed += 1
-                logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
-                time.sleep(3)
-                platform.cleanup_printer_queue()
+                with print_lock:
+                    buffer.print_welcome_lines()
+
+                    random_image = get_random_image()
+                    if random_image:
+                        buffer.print_image(random_image)
+                        logging.info(f"Selected image: {random_image}")
+
+                    buffer.print_random_quote()
+                    buffer.print_finish_line()
+                    logging.info(f"Selected line: {buffer.text}")
+                    total_quotes_printed += 1
+                    logging.info(f"Total quotes printed since bootup: {total_quotes_printed}")
+                    time.sleep(3)
+                    platform.cleanup_printer_queue()
 
             time.sleep(0.5)  # Debounce delay
 

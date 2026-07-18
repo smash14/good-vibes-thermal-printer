@@ -31,10 +31,10 @@ Quotes can be created by editing the `main_code/goodVibes.csv` file. Please note
 After editing is done, check below on how to update the files on the Pi
 
 ### Create new images
-Before each quote, an image can be printed. New images can be added by uploading any common picture file (jpg, png, gif, bmp, webp, tiff - max 10MB) via the Web Interface. The picture is automatically converted into the printable monocolor format the next time the Raspberry Pi's main script starts (progress is printed on the receipt while this happens).
+Before each quote, an image can be printed. New images can be added by uploading any common picture file (jpg, png, gif, bmp, webp, tiff - max 10MB) via the Web Interface. While the main script is running, it periodically checks for new pictures (every 30 seconds by default) and converts them into the printable monocolor format automatically - the new image is then printed once, announced with a short header line, so you know it's ready. If the script isn't running yet, the conversion instead happens the next time it starts (with progress printed on the receipt).
 
 ### Change other translations
-Other translations, like the welcome line, can be changed by editing the `main_code/strings.json` file.
+Other translations, like the welcome line, can be changed by editing the `main_code/strings.json` file. Like quotes and images, changes are picked up automatically while the main script is running, without needing a restart.
 
 ### Upload changes to Raspberry Pi
 All texts can be changed using a Web Interface. 
@@ -43,7 +43,7 @@ All texts can be changed using a Web Interface.
 1) Connect to the Wireless Network "goodvibes" with passphrase "goodvibes123"
 2) Open Web Browser and navigate to "192.168.4.1"
 3) The Web Interface now allows uploading new texts
-4) Restart Pi to apply changes
+4) Changes are picked up automatically within a short time while the printer is running - no restart needed. New quotes/images are also printed once automatically to confirm they arrived (this can be turned off, and the check interval adjusted, via the `runtime_print_on_update` / `runtime_poll_interval_seconds` entries in `strings.json`).
 
 ## Development Instruction
 
@@ -85,8 +85,25 @@ Optionally, you can setup a hotspot and a PHP Server to upload new quotes via we
 - adopt rights: `chmod -R 777 /var/www/html`
 - install php zip: `sudo apt-get install php5-zip`
 
-All files uploaded via Webinterface will automatically be recognized after reboot.
+While `main.py` is running, all files uploaded via Webinterface (quotes, images, strings.json) are automatically recognized within a short time (30 seconds by default, see `runtime_poll_interval_seconds` in `strings.json`) - no reboot needed. If the script isn't running yet, everything pending is picked up the next time it starts.
 
+### Increase PHP upload limits
+The default Debian/Apache PHP install caps uploads well below the Web Interface's
+10MB picture-upload limit (`upload_max_filesize = 2M`, `post_max_size = 8M`). A file
+over these limits fails silently: PHP empties `$_POST`/`$_FILES` with no error at all,
+so the page just reloads with no message and no file saved.
+
+To match the app's 10MB limit, edit `/etc/php/<version>/apache2/php.ini` (e.g.
+`/etc/php/8.2/apache2/php.ini`) and raise both values, then restart Apache:
+
+```
+upload_max_filesize = 12M
+post_max_size = 13M
+```
+
+```
+sudo systemctl restart apache2
+```
 
 ### Execute the Code
 Simply run `main_code/main.py` to run the code.

@@ -9,6 +9,7 @@ import time
 
 class PrintBuffer:
     def __init__(self, filename, print_raw, print_image_file, strings_file="strings.json", image_folder="header_images"):
+        self.csv_file = filename
         self.lines = self._load_csv(filename)
         self._print_raw = print_raw
         self._print_image_file = print_image_file
@@ -16,6 +17,12 @@ class PrintBuffer:
         self.image_folder = image_folder
         self.strings = self._load_strings()
         self._reset_font_styles()
+
+    def reload_quotes(self):
+        self.lines = self._load_csv(self.csv_file)
+
+    def reload_strings(self):
+        self.strings = self._load_strings()
 
     @staticmethod
     def _load_csv(filename):
@@ -177,6 +184,31 @@ class PrintBuffer:
         self.set_text_stars()
         self.set_feed_lines(3)
         self.print()
+
+    def print_new_quote(self, quote_text):
+        """Announce and print a quote that was newly detected while running."""
+        self._reset_font_styles()
+        self.set_text_align("center")
+        announcement = self.strings.get("runtime_new_quote_announcement", {}).get("text", "New good vibe added!")
+        self.set_text(announcement)
+        self.print()
+        self.set_text_stars()
+        self.print()
+        self.set_text(quote_text)
+        self.print()
+        self.set_text_stars()
+        self.set_feed_lines(3)
+        self.print()
+
+    def print_new_image(self, image_path):
+        """Announce and print an image that was newly converted while running."""
+        self._reset_font_styles()
+        self.set_text_align("center")
+        announcement = self.strings.get("runtime_new_image_announcement", {}).get("text", "New image added!")
+        self.set_text(announcement)
+        self.set_feed_lines(2)
+        self.print()
+        self.print_image(image_path)
 
     def print_finish_line(self):
         self._reset_font_styles()

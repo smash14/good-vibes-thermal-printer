@@ -7,7 +7,7 @@ require __DIR__ . '/partials/header.php';
 ?>
 
 <h2>Upload Picture (jpg, png, gif, bmp, webp, tiff - max 10MB)</h2>
-<p>Converted to the printable format automatically the next time the printer starts.</p>
+<p>Converted to the printable format automatically while the printer is running (or at the latest the next time it starts).</p>
 <form method="post" enctype="multipart/form-data">
     <input type="file" name="image_file" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tif,.tiff" required>
     <button type="submit" name="upload_image">Upload Picture</button>
@@ -39,7 +39,7 @@ require __DIR__ . '/partials/header.php';
             <?php if ($entry['thumbnail'] !== null): ?>
                 <img src="<?= e($config['imgDir'] . $entry['thumbnail']) ?>" alt="<?= e($entry['stem']) ?>">
             <?php elseif ($entry['kind'] === 'converted'): ?>
-                <p class="image-card-placeholder">Preview pending next restart</p>
+                <p class="image-card-placeholder">Preview pending update</p>
             <?php else: ?>
                 <p class="image-card-placeholder">No preview available</p>
             <?php endif; ?>
