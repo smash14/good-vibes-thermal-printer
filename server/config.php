@@ -16,4 +16,5 @@ return [
     'imageMaxWidth' => 384,
     'pythonBinary' => 'python3',
     'imageConverterScript' => __DIR__ . '/scripts/image_converter.py',
+    'systemctlBinary' => '/usr/bin/systemctl',
 ];
