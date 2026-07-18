@@ -11,17 +11,24 @@ class PrintBuffer:
     def __init__(self, filename, print_raw, print_image_file, strings_file="strings.json", image_folder="header_images"):
         self.csv_file = filename
         self.lines = self._load_csv(filename)
+        logging.info(f"Loaded {len(self.lines)} lines from CSV.")
         self._print_raw = print_raw
         self._print_image_file = print_image_file
         self.strings_file = strings_file
         self.image_folder = image_folder
         self.strings = self._load_strings()
+        logging.info("Loaded strings from JSON.")
         self._reset_font_styles()
 
     def reload_quotes(self):
+        # Silent - this runs every runtime-updater poll cycle (default every 30s)
+        # regardless of whether the CSV actually changed; the caller logs when it
+        # detects new quotes by diffing against the previous set.
         self.lines = self._load_csv(self.csv_file)
 
     def reload_strings(self):
+        # Silent - same reasoning as reload_quotes: called on every poll cycle
+        # whether or not strings.json actually changed.
         self.strings = self._load_strings()
 
     @staticmethod
@@ -31,7 +38,6 @@ class PrintBuffer:
                 reader = csv.reader(file)
                 lines = [", ".join(row) for row in reader if row]
                 lines = [line.replace("\\n", "\n") for line in lines]
-            logging.info(f"Loaded {len(lines)} lines from CSV.")
             return lines
         except Exception as e:
             logging.error(f"Failed to load CSV: {e}")
@@ -42,7 +48,6 @@ class PrintBuffer:
             strings_path = os.path.join(os.path.dirname(__file__), self.strings_file)
             with open(strings_path, "r", encoding="utf-8") as file:
                 strings = json.load(file)
-            logging.info("Loaded strings from JSON.")
             return strings
         except Exception as e:
             logging.error(f"Failed to load strings.json: {e}")

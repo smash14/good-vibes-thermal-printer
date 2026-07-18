@@ -138,7 +138,6 @@ def generate_pending_previews(image_folder):
     """
     pending = find_pending_previews(image_folder)
     if not pending:
-        logging.info("No pending image previews.")
         return
 
     logging.info(f"Found {len(pending)} image(s) pending preview generation.")
@@ -175,7 +174,6 @@ def convert_pending_images(image_folder, max_width=384, on_progress=None):
     """
     pending = find_pending_conversions(image_folder)
     if not pending:
-        logging.info("No pending image conversions.")
         return
 
     total = len(pending)
